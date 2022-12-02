@@ -1,0 +1,10 @@
+name,smiles,acid,n_ligands
+tpps,"O[S](=O)(=O)c1ccc(cc1)c2c3[nH]c(cc3)c(c4ccc(cc4)[S](O)(=O)=O)c5ccc(n5)c(c6ccc(cc6)[S](O)(=O)=O)c7ccc(n7)c(c8[nH]c2cc8)c9ccc(cc9)[S](O)(=O)=O
+",1,4
+tppc,"OC(=O)c1ccc(cc1)c2c3[nH]c(cc3)c(c4ccc(cc4)C(O)=O)c5ccc(n5)c(c6ccc(cc6)C(O)=O)c7ccc(n7)c(c8[nH]c2cc8)c9ccc(cc9)C(O)=O
+",1,4
+protoporphyrin_IX,"
+Cc1c(CCC(O)=O)c2cc3[nH]c(cc4nc(cc5[nH]c(cc1n2)c(C)c5C=C)c(C)c4C=C)c(C)c3CCC(O)=O",1,2
+5-aminolevulinic_acid,"C(CC(=O)O)C(=O)CN
+
+",1,1
