@@ -1,0 +1,14 @@
+pentafluoroporphyrin-indometacin conjugate
+COc1ccc2n(C(=O)c3ccc(Cl)cc3)c(C)c(CC(=O)NCCCCCCNC(=O)c3ccc(cc3)-c3c4ccc(n4)c(-c4c(F)c(F)c(F)c(F)c4F)c4ccc([nH]4)c(-c4c(F)c(F)c(F)c(F)c4F)c4ccc(n4)c(-c4c(F)c(F)c(F)c(F)c4F)c4ccc3[nH]4)c2c1
+pentafluoroporphyrin - linker only
+NCCCCCCNC(=O)c1ccc(cc1)-c1c2ccc(n2)c(-c2c(F)c(F)c(F)c(F)c2F)c2ccc([nH]2)c(-c2c(F)c(F)c(F)c(F)c2F)c2ccc(n2)c(-c2c(F)c(F)c(F)c(F)c2F)c2ccc1[nH]2
+indometacyne
+Cc1c(c2cc(ccc2n1C(=O)c3ccc(cc3)Cl)OC)CC(=O)O
+teor original ligand conjugate
+Fc1c(F)c(F)c(c(F)c1F)-c1c2ccc(n2)c(-c2ccc(cc2)C(=O)NCCCCCCCCCS(=O)(=O)c2ccc(cc2)C2=C(C(=O)OC2)c2ccccc2)c2ccc([nH]2)c(-c2c(F)c(F)c(F)c(F)c2F)c2ccc(n2)c(-c2c(F)c(F)c(F)c(F)c2F)c2ccc1[nH]2
+full protein box:
+(30.43100070953369, 28.394498825073242, 22.20400047302246, 79.71600151062012, 95.3589973449707, 92.0359992980957)
+
+gnina -r cox.pdb -l pentafluoro_conjugate_ind.pdbqt --center_x 30.43100070953369 --center_y 28.394498825073242 --center_z 22.20400047302246 --size_x 79.71600151062012 --size_y 95.3589973449707 --size_z 92.0359992980957 --exhaustiveness 8 -o pentafluoro_conjugate_ind_gnina_docked.sdf
+
+/tmp/gnina -r ./data/cox.pdb -l .ligands/RCX.pdbqt --autobox_ligand ./data/RCX_5kir.pdb --autobox_add 4 --exhaustiveness 16 -o gnina_output/redock.sdf
