@@ -1,0 +1,16 @@
+
+O=C1c2ccccc2C(=O)N1CCCCNCCCOc1cccc2ccccc12
+OC(CNCCc1ccncc1)COc1ccc(-c2nc(-c3cccs3)c[nH]2)cc1
+CCCCCCOc1c(-c2ccc(O)c(O)c2)oc2c(OC)c(OC)cc(O)c2c1=O
+CCCn1c(=O)c2nc(-c3ccc(OCC(=O)OCC)cc3)[nH]c2n(CCC)c1=S
+CS(=O)(=O)Nc1cc(C(O)CNC(Cc2ccccc2)c2ccc(F)cc2)ccc1O
+COc1cccc(OC)c1OCCNCC1CC(c2ccccc2)c2ccccc2C1=O
+CC(C)C[C@@H](C=O)NC(=O)[C@H](CC1CCCCC1)NC(=O)OCc1ccccc1
+CCCCc1ncc(/C=C(\Cc2cccs2)C(N)=O)n1Cc1ccc(C(=O)O)cc1
+CCCC[C@H](NC(=O)OC(C(C)C)C(C)C)C(=O)C(=O)Nc1cc2ccccc2cn1
+COc1ccccc1N1CCN(CCCCNC(=O)/C=C/c2ccsc2)CC1
+Fc1ccc(COCC2CCN(CCc3ccccc3)CC2)cc1.O=C(O)/C=C\C(=O)O
+CCCCOc1ccccc1N1CCN(CCCCN2C(=O)C3CCCCN3C2=O)CC1
+CCOCCNc1c(C(=O)OCC)cnc2c1cnn2CC(Cl)c1ccccc1
+O=C(O)C[C@@](O)(C[C@H](O)CCCCCn1ccc2cc(Cl)cc(Cl)c21)C(=O)O
+CCC(C)[C@H](NS(=O)(=O)c1cccc2ccccc12)C(=O)N[C@H](C=O)CC(C)C
