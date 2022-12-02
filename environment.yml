@@ -1,0 +1,16 @@
+name: docking
+channels:
+  - bioconda
+  - conda-forge
+  - salilab
+  - defaults
+dependencies:
+  - python=3.8
+  - pymol-open-source
+  - py3dmol
+  - rdkit
+  - pdbfixer
+  - deepchem
+  - requests
+  - pandas
+  - tqdm
