@@ -127,13 +127,13 @@ def fix_uppercase(file, pattern=(' Cl', ' Br')):
             f.write(line)
 
 if __name__ == "__main__":
-    os.chdir('/home/anton/in_dev/Docking_tools/master/ligands')
+    # os.chdir('/home/anton/in_dev/Docking_tools/master/ligands')
     # linker = 'NCCCCCCNC(=O)c1ccc(cc1)-c1c2ccc(n2)c(-c2c(F)c(F)c(F)c(F)c2F)c2ccc([nH]2)c(-c2c(F)c(F)c(F)c(F)c2F)c2ccc(n2)c(-c2c(F)c(F)c(F)c(F)c2F)c2ccc1[nH]2'
     # linker_id = 'pentafluoro_linker'
     # conjugate = 'COc1ccc2n(C(=O)c3ccc(Cl)cc3)c(C)c(CC(=O)NCCCCCCNC(=O)c3ccc(cc3)-c3c4ccc(n4)c(-c4c(F)c(F)c(F)c(F)c4F)c4ccc([nH]4)c(-c4c(F)c(F)c(F)c(F)c4F)c4ccc(n4)c(-c4c(F)c(F)c(F)c(F)c4F)c4ccc3[nH]4)c2c1'
     # conjugate_id = 'pentafluoro_conjugate_ind'
     # orig = 'O=C2OCC(=C2\c1ccccc1)\c3ccc(cc3)S(=O)(=O)C'
     # ind_con ='COc1ccc2c(c1)c(CC(=O)NCCCCCCNC(=O)c1ccc(-c3c4nc(c(-c5c(F)c(F)c(F)c(F)c5F)c5ccc([nH]5)c(-c5c(F)c(F)c(F)c(F)c5F)c5nc(c(-c6c(F)c(F)c(F)c(F)c6F)c6ccc3[nH]6)C=C5)C=C4)cc1)c(C)n2C(=O)c1ccc(Cl)cc1'
-    to_pqbqt('O=C(Cc1ccccc1Nc1c(Cl)cccc1Cl)NCCCCCCNC(=O)c1ccc(-c2c3nc(c(-c4c(F)c(F)c(F)c(F)c4F)c4ccc([nH]4)c(-c4c(F)c(F)c(F)c(F)c4F)c4nc(c(-c5c(F)c(F)c(F)c(F)c5F)c5ccc2[nH]5)C=C4)C=C3)cc1', 'problem_test+6')
-
-
+    to_sdf(
+        'COc1ccc2c(c1)c(CC(=O)NCCCCCCNC(=O)c1ccc(-c3c4nc(c(-c5c(F)c(F)c(F)c(F)c5F)c5ccc([nH]5)c(-c5c(F)c(F)c(F)c(F)c5F)c5nc(c(-c6c(F)c(F)c(F)c(F)c6F)c6ccc3[nH]6)C=C5)C=C4)cc1)c(C)n2C(=O)c1ccc(Cl)cc1',
+        'ind_conj')

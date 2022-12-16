@@ -2,7 +2,7 @@ import pandas as pd
 from rdkit.Chem import AllChem, MACCSkeys
 from rdkit.Chem import DataStructs, rdMolDescriptors, Crippen
 
-from utils.convert_alt import to_rdkit_mol
+from fixes.convert_alt import to_rdkit_mol
 
 
 # based on approach from https://academic.oup.com/bioinformatics/article/28/12/1661/270210

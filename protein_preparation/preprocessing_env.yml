@@ -1,0 +1,18 @@
+name: preprocessing
+channels:
+  - salilab
+  - defaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.8
+  - pymol-open-source
+  - notebook
+  - nb_conda_kernels
+  - py3dmol
+  - autodock-vina
+  - vina
+  - rdkit
+  - mdanalysis
+  - prolif
+  - pdbfixer
