@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 import numpy as np
@@ -13,6 +14,23 @@ def from_sdf_to_xyz(path, silent: bool = True):
 
     """
     path_to_xyz = path.replace('.sdf', '.xyz')
+    cmd = "obabel " + path + " -O " + path_to_xyz
+    if not silent:
+        print(cmd)
+    obabel_return_code = subprocess.run(cmd, shell=True).returncode
+    return path_to_xyz
+
+
+def from_pdbqt_to_xyz(path, silent: bool = True):
+    """
+    Convert pdbqt file to xyz file
+    Args:
+        path: path to sdf file
+
+    Returns: None
+
+    """
+    path_to_xyz = path.replace('.pdbqt', '.xyz')
     cmd = "obabel " + path + " -O " + path_to_xyz
     if not silent:
         print(cmd)
@@ -39,6 +57,7 @@ def xyz_to_numpy(path):
             for j in range(n_atoms):
                 xyz[j] = lines[i * (n_atoms + 2) + 2 + j].split()[1:4]
             yield xyz
+    os.remove(path)
 
 
 def centroid(xyz_generator):
