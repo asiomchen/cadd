@@ -22,12 +22,14 @@ class Extractor:
     def extract(self):
         if self.mode == 'folder':
             self.extracted_data = self._extract_folder()
-            return self.extracted_data
         elif self.mode == 'file':
             self.extracted_data = self._extract_file()
-            return self.extracted_data
+
         else:
             raise ValueError('mode should be either "folder" or "file"')
+        # self.extracted_data['coords'] = self.extracted_data['centroid'].apply(lambda x: x[1])
+        # self.extracted_data['centroid'] = self.extracted_data['centroid'].apply(lambda x: x[0])
+        return self.extracted_data
 
     def _extract_folder(self):
         if self.data_path is None:
@@ -57,6 +59,9 @@ class Point:
     def __str__(self):
         return f'Point({self.x}, {self.y}, {self.z})'
 
+    def __repr__(self):
+        return f'Point({self.x}, {self.y}, {self.z})'
+
 
 def extract_scores(path: str) -> List[float]:
     '''
@@ -73,15 +78,16 @@ def extract_scores(path: str) -> List[float]:
     return scores
 
 
-def extract_coords(path: str) -> Generator:
+def extract_coords(path: str):
     '''
     Extracts the coordinates of the centroid from a pdbqt file
     :param path: str
     :return: Generator
     '''
     xyz_path = from_pdbqt_to_xyz(path)
-    for xyz in centroid(xyz_to_numpy(xyz_path)):
-        yield Point(xyz[0], xyz[1], xyz[2])
+    centroids, coords = centroid(xyz_to_numpy(xyz_path))
+
+    return centroids, coords
 
 
 def extract_scores_from_file(path: str) -> pd.DataFrame:
@@ -90,15 +96,16 @@ def extract_scores_from_file(path: str) -> pd.DataFrame:
     :param path: str
     :return: dict, which could be converted to a pandas DataFrame
     '''
-    out = {'name': [], 'pose': [], 'score': [], 'centroid': []}
+    out = {'name': [], 'pose': [], 'score': [], 'centroid': [], 'coords': []}
     scores = extract_scores(path)
-    centroids = extract_coords(path)
+    centroids, coords = extract_coords(path)
     name = os.path.basename(path).split('.')[0]
     for i, score in enumerate(scores):
         out['name'].append(name)
         out['pose'].append(i)
         out['score'].append(score)
-        out['centroid'].append(next(centroids))
+        out['centroid'].append(Point(*centroids[i]))
+        out['coords'].append(coords[i])
     return pd.DataFrame(out)
 
 
@@ -118,7 +125,6 @@ def extract_scores_from_dir(path, type='pdbqt') -> Dict:
     return out
 
 
-
 if __name__ == '__main__':
     path = '../results/ares_qvina/docked_pocket_16/'
     test = '/home/anton/PycharmProjects/cadd/results/ares_qvina/docked_pocket_16/1_1_925.pdbqt'
@@ -128,6 +134,6 @@ if __name__ == '__main__':
     # for xyz in centroid(xyz_to_numpy(xyz_path)):
     #     print(xyz)
     e = Extractor(mode='file', data_path=test)
-    e2 = Extractor(mode='folder', data_path=path)
-    print(e.extract().head())
-    print(e2.extract().head())
+    # e2 = Extractor(mode='folder', data_path=path)
+    e.extract()
+    print(e.extracted_data.head())
