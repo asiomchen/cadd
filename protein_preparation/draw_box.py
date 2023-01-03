@@ -7,7 +7,7 @@
 from pymol.cgo import *
 
 
-def gridbox(center_x, center_y, center_z, size_x, size_y, size_z, name="gridbox", r1=0, g1=0, b1=1, trasp=0.2):
+def gridbox(center_x, center_y, center_z, size_x, size_y, size_z, name="gridbox", r1=0, g1=1, b1=0, trasp=0.2):
     """
     DESCRIPTION
     Create a box from the center coordinate of the box and the size of box
@@ -104,6 +104,4 @@ pymol
     cmd.load_cgo(obj, name)
 
 
-cmd.extend('gridbox',
-           gridbox(14.863500356674194, 30.77999973297119, 187.72949981689453, 26.999001026153564, 16.40199851989746,
-                   23.481002807617188, trasp=0.3, ))
+cmd.extend('gridbox', gridbox)
