@@ -1,5 +1,18 @@
-import numpy as np
 from pymol import cmd
+from openbabel import pybel
+
+from rdkit import Chem
+from rdkit.Chem import AllChem, rdFMCS, rdMolAlign
+
+from pdbfixer import PDBFixer
+from openmm.app import PDBFile
+
+import MDAnalysis as mda
+from MDAnalysis.coordinates import PDB
+
+import random, math
+
+import numpy as np
 
 
 def separate_protein(code: str):
@@ -57,7 +70,36 @@ def get_box(ligand_file: str, extending: float = 6.0, verbose: bool = False):
         return centroid, box_dims
 
 
+def fix_protein(filename='', addHs_pH=7.4, output='', try_renumberResidues=True, removeHeterogens=True):
+    fix = PDBFixer(filename=filename)
+    fix.findMissingResidues()
+    fix.findNonstandardResidues()
+    fix.replaceNonstandardResidues()
+    if removeHeterogens == True:
+        fix.removeHeterogens(True)
+    fix.findMissingAtoms()
+    fix.addMissingAtoms()
+    fix.addMissingHydrogens(addHs_pH)
+    PDBFile.writeFile(fix.topology, fix.positions, open(output, 'w'))
+
+    if try_renumberResidues == True:
+        try:
+            original = mda.Universe(filename)
+            from_fix = mda.Universe(output)
+
+            resNum = [res.resid for res in original.residues]
+            for idx, res in enumerate(from_fix.residues):
+                res.resid = resNum[idx]
+
+            save = PDB.PDBWriter(filename=output)
+            save.write(from_fix)
+            save.close()
+        except Exception:
+            print('Not possible to renumber residues, check excepton for extra details')
+
+
 if __name__ == '__main__':
     protein = '/home/anton/PycharmProjects/cadd/data/prots/cox.pdb'
-    centroid, box_dims = get_box(protein, extending=5.0)
-    print(centroid, box_dims, sep='\n')
+    # centroid, box_dims = get_box(protein, extending=5.0)
+    # print(centroid, box_dims, sep='\n')
+    fix_protein(filename=protein, addHs_pH=7.4, output='cox_fix.pdb', try_renumberResidues=True, removeHeterogens=False)
