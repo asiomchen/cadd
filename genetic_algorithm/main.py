@@ -93,7 +93,7 @@ class Compound:
         if self.conjugate is None:
             return [0, 0, 0]
         if self.is_docked:
-            print('Already docked')
+            # print('Already docked')
             return extract_scores(out_dir + '/' + self.name + '.pdbqt')
 
         if self.is_generated:
@@ -138,6 +138,18 @@ class Compound:
             return None
         Chem.SanitizeMol(mol)
         return Chem.MolToSmiles(mol)
+
+    def cross(self, other):
+        '''
+        Cross two compounds
+        :param other:
+        :return:
+        '''
+        p = [0.5, 0.5]
+        ps = np.random.choice([self.ps, other.ps], p=p)
+        link = np.random.choice([self.link, other.link], p=p)
+        lig = np.random.choice([self.lig, other.lig], p=p)
+        return Compound(ps, link, lig)
 
     def mutate(self, mutation_rate=0.1):
         new_compound = Compound(self.ps, self.link, self.lig, name=self.name)
@@ -223,7 +235,8 @@ class GeneticDocker:
             if compound.name + '.pdbqt' not in os.listdir('./generated_mols'):
                 compound.to_pdbqt()
                 comp_count += 1
-        print(f'Generated {comp_count} compounds of {len(population)}. {len(population) - comp_count} already exist')
+        print(
+            f'Generated {comp_count} compounds  out of {len(population)}. {len(population) - comp_count} already exist')
 
     def run(self, protein, ex=32, centroid=(42.84, 31.02, 32.31, 34, 75, 43.79, 34.82), out_dir='out'):
         scores = []
@@ -258,11 +271,24 @@ class GeneticDocker:
         sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
         # select 3 mols with probability proportional to their score
         selected = []
+
+        # caclulate probability of selection normalized to 1
         scores = [x[1] for x in sorted_scores]
         scores = np.array(scores)
         scores = scores / np.sum(scores)
+        # select compounds only
         compounds_only = [x[0] for x in sorted_scores]
-        selected = list(np.random.choice(compounds_only, p=scores, size=self.population_size // 2, replace=False))
+        # in range of half of population size generate random number and select compound
+        # Starting from the top of the population, keep adding the finesses to the partial sum P, till P<S
+        # The individual for which P exceeds S is the chosen individual.
+        for i in range(self.population_size // 2):
+            rand = random.random()
+            partial_sum = 0
+            for j in range(len(scores)):
+                partial_sum += scores[j]
+                if partial_sum >= rand:
+                    selected.append(compounds_only[j])
+                    break
 
         # mutate selected compounds
         pre_mutated = np.random.choice([x[0] for x in sorted_scores], p=scores, size=self.population_size // 2,
