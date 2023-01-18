@@ -1,5 +1,5 @@
 import os
-
+import matplotlib.pyplot as plt
 from utils.convert_alt import to_pdbqt, to_sdf
 from utils.fixes import global_seed
 from utils.extract_scores import extract_scores
@@ -20,6 +20,18 @@ links = open(data_path + 'linker.smi').readlines()
 pss = open(data_path + 'ps.smi').readlines()
 all_compounds = list(product(ligs, links, pss))
 print(len(all_compounds))
+
+
+def global_sanitize(smiles):
+    smiles = smiles.split('.')[0]
+    smiles = smiles.replace('[2H]', '[H]')
+    smiles = smiles.replace('[3H]', '[H]')
+    return smiles
+
+
+ligs = list(map(lambda x: global_sanitize(x), ligs))
+links = list(map(lambda x: global_sanitize(x), links))
+pss = list(map(lambda x: global_sanitize(x), pss))
 
 
 def MolWithoutIsotopesToSmiles(mol):
@@ -64,6 +76,10 @@ class Compound:
         return hash(self.conjugate)
 
     def reset(self):
+        '''
+        Reset generated and docked flags and apply sanitization
+        :return:
+        '''
         self.is_generated = os.path.exists('./generated_mols/' + self.name + '.pdbqt')
         self.is_docked = os.path.exists('./docked_mols/' + self.name + '.pdbqt')
         self.ps = self._sanitize(self.ps)
@@ -126,20 +142,17 @@ class Compound:
     def mutate(self, mutation_rate=0.1):
         new_compound = Compound(self.ps, self.link, self.lig, name=self.name)
         if random.random() < mutation_rate:
-            print('Mutating PS')
             new_ps = random.choice(pss)
             new_compound.ps = new_ps
         if random.random() < mutation_rate:
             new_link = random.choice(links)
             new_compound.link = new_link
-            print('Mutating Linker')
         if random.random() < mutation_rate:
             new_lig = random.choice(ligs)
             new_compound.lig = new_lig
-            print('Mutating Ligand')
         new_compound.conjugate = new_compound._reaction()
         if new_compound.conjugate is None:
-            print('Error in reaction for compound: ', new_compound.name)
+            print('Error in reaction for compound in mutate() method: ', new_compound.name)
             print('Scoring will be skipped')
             new_compound.name = self.name + f'_ERROR_{self.ps}_{self.link}_{self.lig}'
         else:
@@ -173,6 +186,7 @@ class GeneticDocker:
         self.links = None
         self.pss = None
         self.population_size = population_size
+        self.history = {}
 
         self.current_iteration = 0
         if not any([self.ligs, self.links, self.pss]) is None:
@@ -244,15 +258,18 @@ class GeneticDocker:
         sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
         # select 3 mols with probability proportional to their score
         selected = []
-        for i in range(5):
-            # normalize scores to sum to 1
-            scores = [x[1] for x in sorted_scores]
-            scores = np.array(scores)
-            scores = scores / np.sum(scores)
-            selected.append(np.random.choice([x[0] for x in sorted_scores], p=scores))
+        scores = [x[1] for x in sorted_scores]
+        scores = np.array(scores)
+        scores = scores / np.sum(scores)
+        compounds_only = [x[0] for x in sorted_scores]
+        selected = list(np.random.choice(compounds_only, p=scores, size=self.population_size // 2, replace=False))
 
         # mutate selected compounds
-        mutated = [c.mutate(mutation_rate=0.333) for c in selected]
+        pre_mutated = np.random.choice([x[0] for x in sorted_scores], p=scores, size=self.population_size // 2,
+                                       replace=False)
+        mutated = [c.mutate(mutation_rate=0.333) for c in pre_mutated]
+        print(type(mutated))
+        print(type(selected))
         joined = selected + mutated
         while len(joined) < self.population_size:
             joined.append(np.random.choice([x[0] for x in sorted_scores], p=scores))
@@ -260,7 +277,7 @@ class GeneticDocker:
         self.next_population = joined
         print('Next population size is: ', len(self.next_population))
         self._generate_population(self.next_population)
-
+        self.history[self.current_iteration] = all_scores
         return sorted_scores
 
 
@@ -274,6 +291,18 @@ class GeneticDocker:
 
 GA = GeneticDocker(population_size=10)
 GA.set_parts(pss, links, ligs)
-for i in range(5):
+for i in range(20):
     scores = GA.run_iteration()
     print(scores)
+    print('-----------------------')
+print(GA.history)
+mean_scores_list = []
+for iter in GA.history:
+    print(iter)
+    # calucate generation mean
+    mean_scores = {compound: np.mean(scores) for compound, scores in GA.history[iter].items()}
+    # sort by generation
+    sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
+    mean_scores_list.append(np.mean([x[1] for x in sorted_scores]))
+plt.plot(mean_scores_list)
+plt.show()
