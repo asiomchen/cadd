@@ -62,7 +62,7 @@ def MolWithoutIsotopesToSmiles(mol: Chem.Mol) -> str:
 
 class Compound:
     '''
-    Base class for fragment-base compound descriptor
+    Base class for fragment-base compound descriptor.
     '''
 
     def __init__(self, ps, link, lig, name='compound', parent_1=None, parent_2=None, is_mutated=False):
@@ -142,52 +142,84 @@ class Compound:
             print(f'Exiting docking for {self.name}, scores: {scores}')
             return scores
 
-
-    def _sanitize(self, smiles):
+    def _sanitize(self, smiles: str) -> str:
+        '''
+        Simple function to sanitize smiles, by hydrogen normalization and removing salts
+        :param smiles:
+        :return:
+        '''
         smiles = smiles.split('.')[0]
         smiles = smiles.replace('[2H]', '[H]')
         smiles = smiles.replace('[3H]', '[H]')
         return smiles
 
     def _reaction(self):
+        '''
+        Perform reaction between ps, link and lig using Reactor class
+        Only carboxylic acid-PS, diamine dialcohol linkers and carboxylic acid-ligands reactions are supported
+        :return:
+        '''
         smiles_compounds = [self.ps, self.link, self.lig]
+        # convert smiles to rdkit molecules
         mols = list(map(Chem.MolFromSmiles, smiles_compounds))
         reactor = Reactor()
+        # perform reaction
         mol = reactor.conjugate(*mols)
+        # convert rdkit molecule to smiles
         if mol is None:
-            return None
+            return mol
+        # sanitize Mol
         Chem.SanitizeMol(mol)
-        return Chem.MolToSmiles(mol)
+        # smiles is returned
+        smiles = Chem.MolToSmiles(mol)
+        return smiles
 
     def cross(self, other, mutation_rate=0.333):
         '''
-        Cross two compounds
-        :param other:
-        :return:
+        Crossover of two compounds (conjugates) with probability of mutation
+        :param other: Compound object
+        :param mutation_rate: float - probability of mutation
+        :return: Compound object
         '''
+        # probability of each parental chromosome to be chosen
         p = [0.5, 0.5]
         # generate mutation mask
         mask = np.random.choice([0, 1], size=3, p=[1 - mutation_rate, mutation_rate])
-        ps = np.random.choice([self.ps, other.ps], p=p)
+        # check if mutation is needed
         is_mutated = any(mask)
+        # choose parent for ps and perform mutation if needed
+        ps = np.random.choice([self.ps, other.ps], p=p)
         if mask[0] == 1:
             ps = np.random.choice(pss)
+        # choose parent for link and perform mutation if needed
         link = np.random.choice([self.link, other.link], p=p)
         if mask[1] == 1:
             link = np.random.choice(links)
+        # choose parent for lig and perform mutation if needed
         lig = np.random.choice([self.lig, other.lig], p=p)
         if mask[2] == 1:
             lig = np.random.choice(ligs)
+        # name generation based on id of fragments
         name = f'{pss.index(ps)}_{links.index(link)}_{ligs.index(lig)}'
+        # create new Compound object
         offspring = Compound(ps, link, lig, name=name, parent_1=self, parent_2=other, is_mutated=is_mutated)
+        # if conjugate is not formed, return ERROR Compound, which will have score 0
         if offspring.conjugate is None:
             print('Error in reaction for compound in .cross(): ', name)
             print('Scoring will be skipped')
             offspring.name = 'ERROR_' + name
+        # reset is used to ensure that generated and docked flags are set correctly
+        # (rather buggy and needs to be fixed with @property for example)
         offspring.reset()
         return offspring
 
     def mutate(self, mutation_rate=0.1):
+        '''
+        Mutation of a compound (conjugate) with probability of mutation - legacy function, was used in previous version,
+        but currently mutation is performed in .cross() function
+        :param mutation_rate:
+        :return:
+        '''
         new_compound = Compound(self.ps, self.link, self.lig, name=self.name, parent_1=self)
         if random.random() < mutation_rate:
             new_ps = random.choice(pss)
@@ -210,20 +242,29 @@ class Compound:
         return new_compound
 
     def to_pdbqt(self, path='./generated_mols'):
-        # convert smiles to pdbqt
+        '''
+        Convert smiles to pdbqt with meeko
+        :param path:
+        :return:
+        '''
         if self.conjugate is None:
             return None
         os.chdir(path)
+        # firstly, smiles is converted to sdf with openbabel and protonation state is set to pH 7.4
         sdf_name = to_sdf(self.conjugate, self.name)
+        # then, sdf is converted to pdbqt with meeko, as it is preferred way to generate pdbqt files
+        # to avoid connectivity and atom type issues
         meeko_cmd = f'mk_prepare_ligand.py -i {sdf_name} -o {self.name}.pdbqt'
         return_code = subprocess.call(meeko_cmd, shell=True)
         # remove sdf file
         os.remove(sdf_name)
         os.chdir('../')
+        # return None if conversion was not successful
         if return_code != 0:
             print('Error in meeko, smiles: ', self.conjugate)
             return None
         else:
+            # set generated flag to True
             self.is_generated = True
             return self.name + '.pdbqt'
 
