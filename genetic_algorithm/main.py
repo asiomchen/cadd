@@ -43,7 +43,12 @@ links = list(map(lambda x: global_sanitize(x), links))
 pss = list(map(lambda x: global_sanitize(x), pss))
 
 
-def MolWithoutIsotopesToSmiles(mol):
+def MolWithoutIsotopesToSmiles(mol: Chem.Mol) -> str:
+    """
+    Convert a rdkit molecule to smiles without isotopes
+    :param mol:
+    :return:
+    """
     atom_data = [(atom, atom.GetIsotope()) for atom in mol.GetAtoms()]
     for atom, isotope in atom_data:
         if isotope:
