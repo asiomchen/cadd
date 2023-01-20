@@ -1,5 +1,7 @@
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
+
 from utils.convert_alt import to_pdbqt, to_sdf
 from utils.fixes import global_seed
 from utils.extract_scores import extract_scores
@@ -22,8 +24,15 @@ all_compounds = list(product(ligs, links, pss))
 print(len(all_compounds))
 
 
-def global_sanitize(smiles):
+def global_sanitize(smiles: str) -> str:
+    '''
+    Simple function to sanitize smiles, by hydrogen normalization and removing salts
+    :param smiles:
+    :return:
+    '''
+    # Remove salts
     smiles = smiles.split('.')[0]
+    # Remove hydrogen isotopes
     smiles = smiles.replace('[2H]', '[H]')
     smiles = smiles.replace('[3H]', '[H]')
     return smiles
@@ -128,6 +137,7 @@ class Compound:
             print(f'Exiting docking for {self.name}, scores: {scores}')
             return scores
 
+
     def _sanitize(self, smiles):
         smiles = smiles.split('.')[0]
         smiles = smiles.replace('[2H]', '[H]')
@@ -227,6 +237,21 @@ class GeneticDocker:
         else:
             self.current_population = self._init_population(size=self.population_size)
         self.next_population = None
+        self.init_genes = None
+
+    def genes_overview(self, population):
+        '''
+        Return proportions of genes in the generation
+        '''
+        if population is None:
+            population = self.current_population
+        names_spited = [c.name.split('_') for c in population]
+        ps = [c[0] for c in names_spited]
+        link = [c[1] for c in names_spited]
+        lig = [c[2] for c in names_spited]
+        # create dataframe
+        df = pd.DataFrame({'ps': ps, 'link': link, 'lig': lig})
+        return df
 
     def _update_checkpoint(self, filename='checkpoint.csv'):
         if self.ligs is None or self.links is None or self.pss is None:
@@ -248,6 +273,7 @@ class GeneticDocker:
 
             init_population.append(Compound(ps, link, lig, name=compound_name))
         self._generate_population(init_population)
+        self.init_genes = self.genes_overview(init_population)
         return init_population
 
     def _generate_population(self, population):
@@ -294,7 +320,7 @@ class GeneticDocker:
         # apply elitism select only population_size best compounds
 
         self.current_iteration += 1
-        mean_scores = {compound: np.mean(scores) for compound, scores in all_scores.items()}
+        mean_scores = {compound: (np.mean(scores)) for compound, scores in all_scores.items()}
         # sort by mean score
         sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
         print('Applying elitism...')
@@ -354,19 +380,11 @@ class GeneticDocker:
 # comp_3 = comp.cross(comp_2)
 # print(comp_3)
 
-def print_linage(compound):
-    if compound.parent_1 is not None:
-        print_linage(compound.parent_1)
-    if compound.parent_2 is not None:
-        print_linage(compound.parent_2)
-    else:
-        print(compound.name)
-        print('-------')
 
 
 GA = GeneticDocker(population_size=50)
 GA.set_parts(pss, links, ligs)
-for i in range(10):
+for i in range(13):
     scores = GA.run_iteration()
     print(scores)
     print('-----------------------')
