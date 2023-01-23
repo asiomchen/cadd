@@ -271,6 +271,7 @@ class Compound:
 
 class GeneticDocker:
     def __init__(self, population_size):
+        self.dock_calls = 0
         self.ligs = None
         self.links = None
         self.pss = None
@@ -430,7 +431,7 @@ class GeneticDocker:
 
 GA = GeneticDocker(population_size=50)
 GA.set_parts(pss, links, ligs)
-for i in range(13):
+for i in range(20):
     scores = GA.run_iteration()
     print(scores)
     print('-----------------------')
