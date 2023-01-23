@@ -1,7 +1,9 @@
-import os
+import os, sys
+
+sys.path.insert(0, '..')
+from datetime import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
-
 from utils.convert_alt import to_pdbqt, to_sdf
 from utils.fixes import global_seed
 from utils.extract_scores import extract_scores
@@ -11,10 +13,19 @@ from create_conjugates.reaction import Reactor
 import random
 from rdkit import Chem
 import subprocess
-import json
-import pickle
+import argparse
 
 global_seed()
+
+parser = argparse.ArgumentParser()
+# add arguments: population size, number of generations, elite size, parent size
+parser.add_argument('--population_size', type=int, default=50, help='Population size')
+parser.add_argument('--generations', type=int, default=20, help='Number of generations')
+parser.add_argument('--elite_size', type=int, default=0.1, help='Elite size', required=False)
+parser.add_argument('--parent_size', type=int, default=0.5, help='Parent size', required=False)
+parser.add_argument('--mutation_rate', type=float, default=0.333, help='Mutation rate', required=False)
+# end, parse arguments
+args = parser.parse_args()
 
 data_path = '../data/parts/'
 ligs = open(data_path + 'ligands_v2.smi').readlines()
@@ -428,10 +439,9 @@ class GeneticDocker:
 # print(comp_3)
 
 
-
-GA = GeneticDocker(population_size=50)
+GA = GeneticDocker(population_size=args.population_size)
 GA.set_parts(pss, links, ligs)
-for i in range(20):
+for i in range(args.generations):
     scores = GA.run_iteration()
     print(scores)
     print('-----------------------')
@@ -448,7 +458,10 @@ plt.plot(mean_scores_list)
 plt.title('Mean score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Mean score [kcal/mol]')
-plt.show()
+# plt.show()
+# save fig with timestamp
+plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution.png')
+
 # plot best score per generation
 best_scores_list = []
 for iter in GA.history:
@@ -462,20 +475,21 @@ plt.plot(best_scores_list)
 plt.title('Best score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Best score [kcal/mol]')
-plt.show()
+plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score.png')
+# plt.show()
 # print best compound linage
 # print_linage(sorted_scores[0][0])
-print('Best compound: ', sorted_scores[0][0].name)
-print('Best compound score: ', sorted_scores[0][1])
-if sorted_scores[0][0].parent_1 is not None and sorted_scores[0][0].parent_2 is not None:
-    print('Best compound parents: ', sorted_scores[0][0].parent_1.name, sorted_scores[0][0].parent_2.name)
-    print('Best compound parents scores: ', sorted_scores[0][0].parent_1.score, sorted_scores[0][0].parent_2.score)
-    if sorted_scores[0][0].parent_1.parent_1 != 'None':
-        print('Best compound grandparents: ', sorted_scores[0][0].parent_1.parent_1.name,
-              sorted_scores[0][0].parent_1.parent_2.name, sorted_scores[0][0].parent_2.parent_1.name,
-              sorted_scores[0][0].parent_2.parent_2.name)
-        print('Best compound grandparents scores: ', sorted_scores[0][0].parent_1.parent_1.score,
-              sorted_scores[0][0].parent_1.parent_2.score, sorted_scores[0][0].parent_2.parent_1.score,
-              sorted_scores[0][0].parent_2.parent_2.score)
-print('Is best compound mutated: ', sorted_scores[0][0].is_mutated)
-print('Is best compound offspring: ', sorted_scores[0][0].conjugate)
+# print('Best compound: ', sorted_scores[0][0].name)
+# print('Best compound score: ', sorted_scores[0][1])
+# if sorted_scores[0][0].parent_1 is not None and sorted_scores[0][0].parent_2 is not None:
+#     print('Best compound parents: ', sorted_scores[0][0].parent_1.name, sorted_scores[0][0].parent_2.name)
+#     print('Best compound parents scores: ', sorted_scores[0][0].parent_1.score, sorted_scores[0][0].parent_2.score)
+#     if sorted_scores[0][0].parent_1.parent_1 != 'None':
+#         print('Best compound grandparents: ', sorted_scores[0][0].parent_1.parent_1.name,
+#               sorted_scores[0][0].parent_1.parent_2.name, sorted_scores[0][0].parent_2.parent_1.name,
+#               sorted_scores[0][0].parent_2.parent_2.name)
+#         print('Best compound grandparents scores: ', sorted_scores[0][0].parent_1.parent_1.score,
+#               sorted_scores[0][0].parent_1.parent_2.score, sorted_scores[0][0].parent_2.parent_1.score,
+#               sorted_scores[0][0].parent_2.parent_2.score)
+# print('Is best compound mutated: ', sorted_scores[0][0].is_mutated)
+# print('Is best compound offspring: ', sorted_scores[0][0].conjugate)
