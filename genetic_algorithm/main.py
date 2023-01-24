@@ -19,8 +19,8 @@ global_seed()
 
 parser = argparse.ArgumentParser()
 # add arguments: population size, number of generations, elite size, parent size
-parser.add_argument('--population_size', type=int, default=50, help='Population size')
-parser.add_argument('--generations', type=int, default=20, help='Number of generations')
+parser.add_argument('--population_size', type=int, default=50, help='Population size', required=False)
+parser.add_argument('--generations', type=int, default=20, help='Number of generations', required=False)
 parser.add_argument('--elite_size', type=int, default=0.1, help='Elite size', required=False)
 parser.add_argument('--parent_size', type=int, default=0.5, help='Parent size', required=False)
 parser.add_argument('--mutation_rate', type=float, default=0.333, help='Mutation rate', required=False)

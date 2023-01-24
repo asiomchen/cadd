@@ -75,15 +75,25 @@ class Reactor:
         :param ligand:
         :return:
         '''
-        if type(ps) == str and type(linker) == str and type(ligand) == str:
-            self.mode = 'smiles'
-        if self.mode == 'smiles':
-            ps, linker, ligand = self._fix_smiles(ps), self._fix_smiles(linker), self._fix_smiles(ligand)
-            ps, linker, ligand = Chem.MolFromSmiles(ps), Chem.MolFromSmiles(linker), Chem.MolFromSmiles(ligand)
-        self.set_linker_type(self._detect_linker_type(linker))
-        linked_ps = self.linker_to_ps(linker, ps)
-        conjugate = self.ligand_to_linked_ps(linked_ps, ligand)
-        return conjugate
+        try:
+            if type(ps) == str and type(linker) == str and type(ligand) == str:
+                self.mode = 'smiles'
+            if self.mode == 'smiles':
+                ps, linker, ligand = self._fix_smiles(ps), self._fix_smiles(linker), self._fix_smiles(ligand)
+                ps, linker, ligand = Chem.MolFromSmiles(ps), Chem.MolFromSmiles(linker), Chem.MolFromSmiles(ligand)
+            self.set_linker_type(self._detect_linker_type(linker))
+            linked_ps = self.linker_to_ps(linker, ps)
+            conjugate = self.ligand_to_linked_ps(linked_ps, ligand)
+            return conjugate
+        except:
+            # print('Error in conjugation reaction. Check input smiles.')
+            # print('ps: ', Chem.MolToSmiles(ps))
+            # print('linker: ', Chem.MolToSmiles(linker))
+            # try:
+            #     print('ligand: ', Chem.MolToSmiles(ligand))
+            # except:
+            #     print('ligand: ', ligand)
+            return None
 
     def _detect_linker_type(self, linker: Chem.Mol) -> str:
         '''
