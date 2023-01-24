@@ -24,6 +24,7 @@ parser.add_argument('--generations', type=int, default=20, help='Number of gener
 parser.add_argument('--elite_size', type=int, default=0.1, help='Elite size', required=False)
 parser.add_argument('--parent_size', type=int, default=0.5, help='Parent size', required=False)
 parser.add_argument('--mutation_rate', type=float, default=0.333, help='Mutation rate', required=False)
+parser.add_argument('--output', type=str, help='Output file', default='output.log')
 # end, parse arguments
 args = parser.parse_args()
 
@@ -144,7 +145,7 @@ class Compound:
         out_name = out_dir + '/' + self.name + '.pdbqt'
         cmd = cmd_template.format(protein, ligand, ex, out_name)
         print(f'Entering docking for {self.name}')
-        return_code = subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return_code = subprocess.call(cmd, shell=True)
         if return_code != 0:
             print('Error in docking, smiles: ', self.conjugate)
             return [0, 0, 0]
