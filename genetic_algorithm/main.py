@@ -461,7 +461,7 @@ plt.xlabel('Generation')
 plt.ylabel('Mean score [kcal/mol]')
 # plt.show()
 # save fig with timestamp
-plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution.png')
+# plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution.png')
 
 # plot best score per generation
 best_scores_list = []
@@ -476,7 +476,7 @@ plt.plot(best_scores_list)
 plt.title('Best score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Best score [kcal/mol]')
-plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score.png')
+# plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score.png')
 # plt.show()
 # print best compound linage
 # print_linage(sorted_scores[0][0])
@@ -494,3 +494,9 @@ plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score.png')
 #               sorted_scores[0][0].parent_2.parent_2.score)
 # print('Is best compound mutated: ', sorted_scores[0][0].is_mutated)
 # print('Is best compound offspring: ', sorted_scores[0][0].conjugate)
+init_genes = GA.init_genes
+init_genes['gen'] = 0
+last_genes = GA.genes_overview(None)
+last_genes['gen'] = args.generations - 1
+merged = pd.concat([init_genes, last_genes])
+merged.to_csv(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_genes_overview.csv', index=False)
