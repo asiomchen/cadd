@@ -148,10 +148,7 @@ class Compound:
         if self.conjugate is None:
             self.score = 0
             return self.score
-        if self.is_generated:
-            ligand = './generated_mols/' + self.name + '.pdbqt'
-        else:
-            ligand = self.to_pdbqt()
+        ligand = './generated_mols/' + self.name + '.pdbqt'
         if ligand is None:
             print('Error in generation, smiles: ', self.conjugate)
             return None
