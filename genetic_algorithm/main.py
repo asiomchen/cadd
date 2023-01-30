@@ -14,6 +14,8 @@ import random
 from rdkit import Chem
 import subprocess
 import argparse
+from multiprocessing import Pool
+from other import retrive_chkpt
 
 global_seed()
 
@@ -25,6 +27,8 @@ parser.add_argument('--elite_size', type=int, default=0.1, help='Elite size', re
 parser.add_argument('--parent_size', type=int, default=0.5, help='Parent size', required=False)
 parser.add_argument('--mutation_rate', type=float, default=0.333, help='Mutation rate', required=False)
 parser.add_argument('--output', type=str, help='Output file', default='output.log')
+parser.add_argument('--chkpt', type=str, help='Checkpoint file', default='./docked_mols', required=False)
+parser.add_argument('--n_jobs', type=int, help='Number of jobs', default=2, required=False)
 # end, parse arguments
 args = parser.parse_args()
 
@@ -34,6 +38,13 @@ links = open(data_path + 'linker.smi').readlines()
 pss = open(data_path + 'ps.smi').readlines()
 all_compounds = list(product(ligs, links, pss))
 print(len(all_compounds))
+SCORES_DF = None
+if args.chkpt and 'csv' in args.chkpt:
+    SCORES_DF = pd.read_csv(args.chkpt, index_col=0)
+    print(f'Loaded {len(SCORES_DF)} molecules from {args.chkpt}')
+elif args.chkpt and './' in args.chkpt:
+    SCORES_DF = retrive_chkpt(args.chkpt)
+    print(f'Loaded {len(SCORES_DF)} molecules from folder {args.chkpt}')
 
 
 def global_sanitize(smiles: str) -> str:
@@ -81,7 +92,7 @@ class Compound:
         self.ps = self._sanitize(ps)
         self.link = self._sanitize(link)
         self.lig = self._sanitize(lig)
-        self.conjugate = self._reaction()
+        self._conjugate = None
         if self.conjugate is None:
             print('Error in reaction for compound: ', name)
             print('Scoring will be skipped')
@@ -92,6 +103,20 @@ class Compound:
         self.score = 0
         self.parent_1 = parent_1
         self.parent_2 = parent_2
+
+    @property
+    def conjugate(self):
+        return self._conjugate
+
+    @conjugate.setter
+    def conjugate(self, value):
+        self._conjugate = value
+
+    @conjugate.getter
+    def conjugate(self):
+        if self._conjugate is None:
+            self._conjugate = self._reaction()
+        return self._conjugate
 
     def __str__(self):
         return f'Compound(name={self.name}, parent_1={self.parent_1.name if self.parent_1 is not None else None}, parent_2={self.parent_2.name if self.parent_2 is not None else None}, is_mutated={self.is_mutated})'
@@ -115,19 +140,14 @@ class Compound:
         self.ps = self._sanitize(self.ps)
         self.link = self._sanitize(self.link)
         self.lig = self._sanitize(self.lig)
-        self.conjugate = self._reaction()
+
 
     def dock(self, protein='../data/prots/cox2.pdbqt', ex=32, centroid=(42.84, 31.02, 32.31, 34, 75, 43.79, 34.82),
              out_dir='./docked_mols'):
         scores = []
         if self.conjugate is None:
             self.score = 0
-            return [0, 0, 0]
-        if self.is_docked:
-            scores = extract_scores(out_dir + '/' + self.name + '.pdbqt')
-            self.score = np.mean(scores)
-            return scores
-
+            return self.score
         if self.is_generated:
             ligand = './generated_mols/' + self.name + '.pdbqt'
         else:
@@ -145,14 +165,14 @@ class Compound:
         out_name = out_dir + '/' + self.name + '.pdbqt'
         cmd = cmd_template.format(protein, ligand, ex, out_name)
         print(f'Entering docking for {self.name}')
-        return_code = subprocess.call(cmd, shell=True)
+        return_code = subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if return_code != 0:
             print('Error in docking, smiles: ', self.conjugate)
-            return [0, 0, 0]
+            return 0
         else:
             scores = extract_scores(out_name)
             print(f'Exiting docking for {self.name}, scores: {scores}')
-            return scores
+            return np.mean(scores)
 
     def _sanitize(self, smiles: str) -> str:
         '''
@@ -298,7 +318,7 @@ class GeneticDocker:
         self.next_population = None
         self.init_genes = None
 
-    def genes_overview(self, population):
+    def genes_overview(self, population=None):
         '''
         Return proportions of genes in the generation
         '''
@@ -337,23 +357,11 @@ class GeneticDocker:
 
     def _generate_population(self, population):
         comp_count = 0
-        for compound in population:
-            if compound.name + '.pdbqt' not in os.listdir('./generated_mols'):
-                compound.to_pdbqt()
-                comp_count += 1
-        print(
-            f'Generated {comp_count} compounds  out of {len(population)}. {len(population) - comp_count} already exist')
-
-    def run(self, protein, ex=32, centroid=(42.84, 31.02, 32.31, 34, 75, 43.79, 34.82), out_dir='out'):
-        scores = []
-
-        cmd_template = "./qvina-w --receptor {} --ligand {} --num_modes $num_modes " \
-                       "--exhaustiveness {} --seed 42 --out {} " \
-                       "--center_x 42.8405 --center_y 31.0155 --center_z 32.3135 " \
-                       "--size_x 34.751 --size_y 43.7889 --size_z 34.821"
-        for compound in self.current_population:
-            out_name = out_dir + '/' + compound.name
-            cmd = cmd_template.format(protein, ex, out_name)
+        to_generate = [comp for comp in population if comp.name + '.pdbqt' not in os.listdir('./generated_mols')]
+        comp_count = len(to_generate)
+        with Pool(processes=8) as pool:
+            pool.map(Compound.to_pdbqt, to_generate)
+        print(f'Generated {comp_count} compounds  out of {len(population)}.')
 
     def set_parts(self, pss, links, ligs):
         self.pss = pss
@@ -362,24 +370,52 @@ class GeneticDocker:
         self.current_population = self._init_population(size=self.population_size)
 
     def run_iteration(self):
-        all_scores = {}
+        global SCORES_DF
+        mean_scores = {}
         print('Running iteration: ', self.current_iteration)
 
         if self.next_population is not None:
             self.current_population = self.next_population
             self.next_population = None
-        print('Current compound names are: ', [c.name for c in self.current_population])
-        print('{} compounds to dock'.format(sum([not c.is_docked for c in self.current_population])))
+        docking_queue = []
+        if SCORES_DF is None:
+            print(f'Scores dataframe is empty, running docking for {len(self.current_population)} compounds')
+        else:
+            pass
+            # no_doc = [c for c in self.current_population if c.name not in SCORES_DF.index]
+            # print(f'Scores dataframe is not empty, running docking for {len(no_doc)} compounds')
         for compound in self.current_population:
-            if not compound.is_docked:
-                compound.reset()
             # print('Docking compound: ', compound.name)
             # print('Compound is docked: ', compound.is_docked)
-            all_scores[compound] = compound.dock()
+            if SCORES_DF is None:
+                print('SCORES_DF is None')
+            if SCORES_DF is not None and compound.name in SCORES_DF.index:
+                mean_scores[compound] = SCORES_DF.loc[compound.name, 'score']
+            if SCORES_DF is not None and compound.name not in SCORES_DF.index:
+                docking_queue.append(compound)
+        print(f'Queue length: {len(docking_queue)}')
+        print(f'Queue: {docking_queue}')
+        with Pool(args.n_jobs) as p:
+            # use .dock() method to run docking
+            scores = p.map(Compound.dock, docking_queue)
+        print(f'Scores length: {len(scores)}')
+        new_scores = {compound.name: score for compound, score in zip(docking_queue, scores)}
+        print(f'New scores: \n{new_scores}')
+        for compound, score in zip(docking_queue, scores):
+            mean_scores[compound] = score
+            new_scores_df = pd.DataFrame.from_dict(new_scores, orient='index', columns=['score'])
+            # add to SCORES_DF
+            SCORES_DF = pd.concat([SCORES_DF, new_scores_df])
+            # drop index duplicates
+            SCORES_DF = SCORES_DF[~SCORES_DF.index.duplicated(keep='first')]
+
         # apply elitism select only population_size best compounds
+        if SCORES_DF is None:
+            to_df = {c.name: score for c, score in mean_scores.items()}
+            SCORES_DF = pd.DataFrame.from_dict(to_df, orient='index')
+            SCORES_DF.columns = ['score']
 
         self.current_iteration += 1
-        mean_scores = {compound: (np.mean(scores)) for compound, scores in all_scores.items()}
         # sort by mean score
         sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
         print('Applying elitism...')
@@ -393,32 +429,27 @@ class GeneticDocker:
         scores = [x[1] for x in sorted_scores]
         scores = np.array(scores)
         scores = scores / np.sum(scores)
+        print('Scores: \n', scores)
         # select compounds only
         compounds_only = [x[0] for x in sorted_scores]
         # in range of half of population size generate random number and select compound
         # Starting from the top of the population, keep adding the finesses to the partial sum P, till P<S
         # The individual for which P exceeds S is the chosen individual.
-        all_parents = np.random.rand(int(self.population_size))
-        # split parents into 2 groups
-        parents_1 = all_parents[:int(self.population_size / 2)]
-        parents_2 = all_parents[int(self.population_size / 2):]
 
         # generate offsprings
         offsprings = []
         parent_compounds = []
         for i in range(int(self.population_size / 2)):
-            parent_1 = compounds_only[np.where(np.cumsum(scores) > parents_1[i])[0][0]]
-            parent_2 = compounds_only[np.where(np.cumsum(scores) > parents_2[i])[0][0]]
-            offsprings.append(parent_1.cross(parent_2))
-            parent_compounds.append(parent_1)
-            parent_compounds.append(parent_2)
-        print(f'{len(offsprings)} offsprings generated from {len(all_parents)} parents')
+            # select 2 parents
+            parents = np.random.choice(compounds_only, size=2, p=scores, replace=False)
+            # generate offspring
+            offsprings.append(parents[0].cross(parents[1]))
+            parent_compounds.append(parents[0])
+            parent_compounds.append(parents[1])
+        print(f'{len(offsprings)} offsprings generated from {len(parent_compounds)} parents.')
 
         # in same fashion select subset of population to mutate
         mutate_rolls = np.random.rand(int(self.population_size / 2))
-        pre_mutated = parents.copy()
-
-        mutated = [c.mutate(mutation_rate=0.2) for c in pre_mutated]
         # select best 20% of original population
         elite = sorted_scores[:int(self.population_size / 5)]
         elite = [x[0] for x in elite]
@@ -430,7 +461,7 @@ class GeneticDocker:
         self.next_population = joined
         print('Next population size is: ', len(self.next_population))
         self._generate_population(self.next_population)
-        self.history[self.current_iteration] = all_scores
+        self.history[self.current_iteration] = mean_scores
         return sorted_scores
 
 
@@ -442,7 +473,7 @@ class GeneticDocker:
 
 GA = GeneticDocker(population_size=args.population_size)
 GA.set_parts(pss, links, ligs)
-for i in range(args.generations):
+for gen in range(args.generations):
     scores = GA.run_iteration()
     print(scores)
     print('-----------------------')
@@ -476,7 +507,7 @@ plt.plot(best_scores_list)
 plt.title('Best score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Best score [kcal/mol]')
-# plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score.png')
+plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score.png')
 # plt.show()
 # print best compound linage
 # print_linage(sorted_scores[0][0])
@@ -500,3 +531,4 @@ last_genes = GA.genes_overview(None)
 last_genes['gen'] = args.generations - 1
 merged = pd.concat([init_genes, last_genes])
 merged.to_csv(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_genes_overview.csv', index=False)
+SCORES_DF.to_csv('chk.csv', index=True)
