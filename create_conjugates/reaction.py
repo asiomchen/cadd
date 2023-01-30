@@ -9,12 +9,12 @@ from rdkit.Chem import PandasTools
 class Reactor:
     # reaction def for basic conjugation, if linker is diamine
     # first converts amine linker and acid porphyrin to linked amine
-    rcx_linker_to_ps_NN = '[CX4:0][NH2:1].[OH:2][C:3]=[0:4]>>[CX4:0][NH1:1][C:3]=[0:4]'
+    rcx_linker_to_ps_NN = '[CX4:0][NH2:1].[OH][C:3]=[0:4]>>[CX4:0][NH1:1][C:3]=[0:4]'
     # second reaction utilizes the same def, but used to conjugate linked porphyrin to ligand
-    rcx_linked_add_ligand_NN = '[CX4:0][NH2:1].[OH:2][C:3]=[0:4]>>[CX4:0][NH1:1][C:3]=[0:4]'
+    rcx_linked_add_ligand_NN = '[CX4:0][NH2:1].[OH][C:3]=[0:4]>>[CX4:0][NH1:1][C:3]=[0:4]'
 
-    rcx_linker_to_ps_OO = '[CX4:0][OH:1].[OH:2][C:3]=[0:4]>>[CX4:0][0:1][C:3]=[0:4]'
-    rcx_linked_add_ligand_OO = '[CX4:0][OH:1].[OH:2][C:3]=[0:4]>>[CX4:0][0:1][C:3]=[0:4]'
+    rcx_linker_to_ps_OO = '[CX4:0][OH:1].[OH][C:3]=[0:4]>>[CX4:0][0:1][C:3]=[0:4]'
+    rcx_linked_add_ligand_OO = '[CX4:0][OH:1].[OH][C:3]=[0:4]>>[CX4:0][0:1][C:3]=[0:4]'
 
     # for the sake of simplicity, this class assumes that ligands and porphyrins are carboxylic acids
     def __init__(self, linker_type='NN', mode='Mol'):
