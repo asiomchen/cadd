@@ -285,8 +285,9 @@ class Compound:
         # to avoid connectivity and atom type issues
         meeko_cmd = f'mk_prepare_ligand.py -i {sdf_name} -o {self.name}.pdbqt'
         return_code = subprocess.call(meeko_cmd, shell=True)
-        # remove sdf file
-        os.remove(sdf_name)
+        # remove sdf file if exists ????
+        if os.path.exists(sdf_name):
+            os.remove(sdf_name)
         os.chdir('../')
         # return None if conversion was not successful
         if return_code != 0:
@@ -328,16 +329,6 @@ class GeneticDocker:
         # create dataframe
         df = pd.DataFrame({'ps': ps, 'link': link, 'lig': lig})
         return df
-
-    def _update_checkpoint(self, filename='checkpoint.csv'):
-        if self.ligs is None or self.links is None or self.pss is None:
-            raise ValueError('Parts are not set')
-        # check if file exists if not create it if yes read it
-        if not os.path.exists(filename):
-            with open(filename, 'w') as f:
-                f.write('0')
-        else:
-            pass
 
     def _init_population(self, size):
         init_population = []
@@ -462,12 +453,6 @@ class GeneticDocker:
         return sorted_scores
 
 
-# comp = Compound(pss[0], links[0], ligs[0], name='0_0_0')
-# comp_2 = Compound(pss[5], links[3], ligs[100], name='5_3_100')
-# comp_3 = comp.cross(comp_2)
-# print(comp_3)
-
-
 GA = GeneticDocker(population_size=args.population_size)
 GA.set_parts(pss, links, ligs)
 for gen in range(args.generations):
@@ -489,7 +474,7 @@ plt.xlabel('Generation')
 plt.ylabel('Mean score [kcal/mol]')
 # plt.show()
 # save fig with timestamp
-# plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution.png')
+plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution.png')
 
 # plot best score per generation
 best_scores_list = []
