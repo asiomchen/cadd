@@ -125,7 +125,7 @@ class Compound:
         return f'Compound({self.name})'
 
     def __eq__(self, other):
-        return self.ps == other.ps and self.link == other.link and self.lig == other.lig
+        return self.ps == other.ps and self.link == other.link and self.lig == other.lig and False
 
     def __hash__(self):
         return hash(self.conjugate)
@@ -425,16 +425,15 @@ class GeneticDocker:
         # The individual for which P exceeds S is the chosen individual.
 
         # generate offsprings
-        offsprings = []
-        parent_compounds = []
-        for i in range(int(self.population_size / 2)):
-            # select 2 parents
-            parents = np.random.choice(compounds_only, size=2, p=scores, replace=False)
-            # generate offspring
-            offsprings.append(parents[0].cross(parents[1]))
-            parent_compounds.append(parents[0])
-            parent_compounds.append(parents[1])
-        print(f'{len(offsprings)} offsprings generated from {len(parent_compounds)} parents.')
+        parents = np.random.choice(self.current_population, size=int(self.population_size / 2), p=scores, replace=False)
+        parents_1 = parents[:len(parents) // 2]
+        parents_2 = parents[len(parents) // 2:]
+        offsprings_1 = [parent_1.cross(parent_2) for parent_1, parent_2 in zip(parents_1, parents_2)]
+        offsprings_2 = [parent_2.cross(parent_1) for parent_1, parent_2 in zip(parents_1, parents_2)]
+        offsprings = offsprings_1 + offsprings_2
+
+        print(f'{len(offsprings)} offsprings generated from {len(parents)} parents.')
+        print(f'Number unique parents: {len(set(parents))}')
 
         # in same fashion select subset of population to mutate
         mutate_rolls = np.random.rand(int(self.population_size / 2))
@@ -442,10 +441,7 @@ class GeneticDocker:
         elite = sorted_scores[:int(self.population_size / 5)]
         elite = [x[0] for x in elite]
         # replace worst half of population with offsprings
-        joined = parent_compounds + offsprings + elite
-        # while len(joined) < self.population_size:
-        #     joined.append(np.random.choice([x[0] for x in sorted_scores], p=scores))
-        #     joined = [x for x in joined if x.name.contains('ERROR') is False]
+        joined = list(parents) + offsprings + elite
         self.next_population = joined
         print('Next population size is: ', len(self.next_population))
         self._generate_population(self.next_population)
