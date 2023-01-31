@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser()
 # add arguments: population size, number of generations, elite size, parent size
 parser.add_argument('--population_size', type=int, default=50, help='Population size', required=False)
 parser.add_argument('--generations', type=int, default=20, help='Number of generations', required=False)
-parser.add_argument('--elite_size', type=int, default=0.1, help='Elite size', required=False)
+parser.add_argument('--elite_size', type=int, default=0.2, help='Elite size', required=False)
 parser.add_argument('--parent_size', type=int, default=0.5, help='Parent size', required=False)
 parser.add_argument('--mutation_rate', type=float, default=0.333, help='Mutation rate', required=False)
 parser.add_argument('--output', type=str, help='Output file', default='output.log')
@@ -31,13 +31,15 @@ parser.add_argument('--chkpt', type=str, help='Checkpoint file', default='./dock
 parser.add_argument('--n_jobs', type=int, help='Number of jobs', default=2, required=False)
 # end, parse arguments
 args = parser.parse_args()
-
+# load all compounds
 data_path = '../data/parts/'
 ligs = open(data_path + 'ligands_v2.smi').readlines()
 links = open(data_path + 'linker.smi').readlines()
 pss = open(data_path + 'ps.smi').readlines()
+# number of compounds possible to create
 all_compounds = list(product(ligs, links, pss))
 print(len(all_compounds))
+# checkpoint is either a csv file or a folder with docked molecules
 SCORES_DF = None
 if args.chkpt and 'csv' in args.chkpt:
     SCORES_DF = pd.read_csv(args.chkpt, index_col=0)
@@ -61,26 +63,10 @@ def global_sanitize(smiles: str) -> str:
     return smiles
 
 
+# ii theory all compound are cleaned, but to be sure we sanitize them
 ligs = list(map(lambda x: global_sanitize(x), ligs))
 links = list(map(lambda x: global_sanitize(x), links))
 pss = list(map(lambda x: global_sanitize(x), pss))
-
-
-def MolWithoutIsotopesToSmiles(mol: Chem.Mol) -> str:
-    """
-    Convert a rdkit molecule to smiles without isotopes
-    :param mol:
-    :return:
-    """
-    atom_data = [(atom, atom.GetIsotope()) for atom in mol.GetAtoms()]
-    for atom, isotope in atom_data:
-        if isotope:
-            atom.SetIsotope(0)
-    smiles = Chem.MolToSmiles(mol)
-    for atom, isotope in atom_data:
-        if isotope:
-            atom.SetIsotope(isotope)
-    return smiles
 
 
 class Compound:
@@ -89,13 +75,10 @@ class Compound:
     '''
 
     def __init__(self, ps, link, lig, name='compound', parent_1=None, parent_2=None, is_mutated=False):
-        self.ps = self._sanitize(ps)
-        self.link = self._sanitize(link)
-        self.lig = self._sanitize(lig)
+        self.ps = ps
+        self.link = link
+        self.lig = lig
         self._conjugate = None
-        if self.conjugate is None:
-            print('Error in reaction for compound: ', name)
-            print('Scoring will be skipped')
         self.name = name
         self.is_generated = os.path.exists('./generated_mols/' + self.name + '.pdbqt')
         self.is_docked = os.path.exists('./docked_mols/' + self.name + '.pdbqt')
@@ -137,50 +120,40 @@ class Compound:
         '''
         self.is_generated = os.path.exists('./generated_mols/' + self.name + '.pdbqt')
         self.is_docked = os.path.exists('./docked_mols/' + self.name + '.pdbqt')
-        self.ps = self._sanitize(self.ps)
-        self.link = self._sanitize(self.link)
-        self.lig = self._sanitize(self.lig)
-
 
     def dock(self, protein='../data/prots/cox2.pdbqt', ex=32, centroid=(42.84, 31.02, 32.31, 34, 75, 43.79, 34.82),
              out_dir='./docked_mols'):
-        scores = []
+        # now docking assuming that we only COX-2 and best pocket is used (to be changed)
+        # if any problem with conjugate generation or/and docking, we return 0 as neutral score
+        self.score = 0
         if self.conjugate is None:
-            self.score = 0
             return self.score
         ligand = './generated_mols/' + self.name + '.pdbqt'
         if ligand is None:
             print('Error in generation, smiles: ', self.conjugate)
-            return None
+            return self.score
         else:
             ligand = './generated_mols/' + self.name + '.pdbqt'
-
+        # docking command template using qvina-w
         cmd_template = "./qvina-w --receptor {} --ligand {} --num_modes 3 " \
                        "--exhaustiveness {} --seed 42 --out {} " \
                        "--center_x 42.8405 --center_y 31.0155 --center_z 32.3135 " \
                        "--size_x 34.751 --size_y 43.7889 --size_z 34.821"
         out_name = out_dir + '/' + self.name + '.pdbqt'
+        # filling command template
         cmd = cmd_template.format(protein, ligand, ex, out_name)
         print(f'Entering docking for {self.name}')
+        # running docking without output
         return_code = subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if return_code != 0:
             print('Error in docking, smiles: ', self.conjugate)
-            return 0
+            return self.score
         else:
+            # if docking was successful, we extract scores from output pdbqt and mean is used as score
             scores = extract_scores(out_name)
             print(f'Exiting docking for {self.name}, scores: {scores}')
-            return np.mean(scores)
-
-    def _sanitize(self, smiles: str) -> str:
-        '''
-        Simple function to sanitize smiles, by hydrogen normalization and removing salts
-        :param smiles:
-        :return:
-        '''
-        smiles = smiles.split('.')[0]
-        smiles = smiles.replace('[2H]', '[H]')
-        smiles = smiles.replace('[3H]', '[H]')
-        return smiles
+            self.score = np.mean(scores)
+            return self.score
 
     def _reaction(self):
         '''
