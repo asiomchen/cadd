@@ -215,34 +215,6 @@ class Compound:
         offspring.reset()
         return offspring
 
-    def mutate(self, mutation_rate=0.1):
-        '''
-        Mutation of a compound (conjugate) with probability of mutation - legacy function, was used in previous version,
-        but currently mutation is performed in .cross() function
-        :param mutation_rate:
-        :return:
-        '''
-        new_compound = Compound(self.ps, self.link, self.lig, name=self.name, parent_1=self)
-        if random.random() < mutation_rate:
-            new_ps = random.choice(pss)
-            new_compound.ps = new_ps
-        if random.random() < mutation_rate:
-            new_link = random.choice(links)
-            new_compound.link = new_link
-        if random.random() < mutation_rate:
-            new_lig = random.choice(ligs)
-            new_compound.lig = new_lig
-        new_compound.conjugate = new_compound._reaction()
-        if new_compound.conjugate is None:
-            print('Error in reaction for compound in mutate() method: ', new_compound.name)
-            print('Scoring will be skipped')
-            new_compound.name = self.name + f'_ERROR_{self.ps}_{self.link}_{self.lig}'
-        else:
-            mutant_name = f'{pss.index(new_compound.ps)}_{links.index(new_compound.link)}_{ligs.index(new_compound.lig)}'
-            new_compound.name = mutant_name
-        new_compound.reset()
-        return new_compound
-
     def to_pdbqt(self, path='./generated_mols'):
         '''
         Convert smiles to pdbqt with meeko
