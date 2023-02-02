@@ -80,8 +80,6 @@ class Compound:
         self.lig = lig
         self._conjugate = None
         self.name = name
-        self.is_generated = os.path.exists('./generated_mols/' + self.name + '.pdbqt')
-        self.is_docked = os.path.exists('./docked_mols/' + self.name + '.pdbqt')
         self.is_mutated = is_mutated
         self.score = 0
         self.parent_1 = parent_1
@@ -228,8 +226,6 @@ class Compound:
             print('Error in meeko, smiles: ', self.conjugate)
             return None
         else:
-            # set generated flag to True
-            self.is_generated = True
             return self.name + '.pdbqt'
 
 
@@ -307,8 +303,6 @@ class GeneticDocker:
             # no_doc = [c for c in self.current_population if c.name not in SCORES_DF.index]
             # print(f'Scores dataframe is not empty, running docking for {len(no_doc)} compounds')
         for compound in self.current_population:
-            # print('Docking compound: ', compound.name)
-            # print('Compound is docked: ', compound.is_docked)
             if SCORES_DF is None:
                 print('SCORES_DF is None')
             if SCORES_DF is not None and compound.name in SCORES_DF.index:
@@ -317,6 +311,7 @@ class GeneticDocker:
                 docking_queue.append(compound)
         print(f'Queue length: {len(docking_queue)}')
         print(f'Queue: {docking_queue}')
+        # run docking in parallel
         with Pool(args.n_jobs) as p:
             # use .dock() method to run docking
             scores = p.map(Compound.dock, docking_queue)
@@ -385,6 +380,8 @@ class GeneticDocker:
         return sorted_scores
 
 
+# actual run part
+
 GA = GeneticDocker(population_size=args.population_size)
 GA.set_parts(pss, links, ligs)
 for gen in range(args.generations):
@@ -407,7 +404,6 @@ plt.ylabel('Mean score [kcal/mol]')
 # plt.show()
 # save fig with timestamp
 plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution.png')
-
 # plot best score per generation
 best_scores_list = []
 for iter in GA.history:
