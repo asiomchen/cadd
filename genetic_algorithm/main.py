@@ -113,14 +113,6 @@ class Compound:
     def __hash__(self):
         return hash(self.conjugate)
 
-    def reset(self):
-        '''
-        Reset generated and docked flags and apply sanitization
-        :return:
-        '''
-        self.is_generated = os.path.exists('./generated_mols/' + self.name + '.pdbqt')
-        self.is_docked = os.path.exists('./docked_mols/' + self.name + '.pdbqt')
-
     def dock(self, protein='../data/prots/cox2.pdbqt', ex=32, centroid=(42.84, 31.02, 32.31, 34, 75, 43.79, 34.82),
              out_dir='./docked_mols'):
         # now docking assuming that we only COX-2 and best pocket is used (to be changed)
@@ -210,9 +202,6 @@ class Compound:
             print('Error in reaction for compound in .cross(): ', name)
             print('Scoring will be skipped')
             offspring.name = 'ERROR_' + name
-        # reset is used to ensure that generated and docked flags are set correctly
-        # (rather buggy and needs to be fixed with @property for example)
-        offspring.reset()
         return offspring
 
     def to_pdbqt(self, path='./generated_mols'):
@@ -348,7 +337,7 @@ class GeneticDocker:
             SCORES_DF = pd.DataFrame.from_dict(to_df, orient='index')
             SCORES_DF.columns = ['score']
 
-        self.current_iteration += 1
+
         # sort by mean score
         sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
         print('Applying elitism...')
@@ -378,12 +367,13 @@ class GeneticDocker:
         offsprings = offsprings_1 + offsprings_2
 
         print(f'{len(offsprings)} offsprings generated from {len(parents)} parents.')
-        print(f'Number unique parents: {len(set(parents))}')
+        print(f'Number unique parents: {len(set([parent.name for parent in parents]))} of {len(parents)}')
+        print(
+            f'Number unique offsprings: {len(set([offspring.name for offspring in offsprings]))} of {len(offsprings)}')
 
         # in same fashion select subset of population to mutate
-        mutate_rolls = np.random.rand(int(self.population_size / 2))
         # select best 20% of original population
-        elite = sorted_scores[:int(self.population_size / 5)]
+        elite = sorted_scores[:int(self.population_size * args.elite_size)]
         elite = [x[0] for x in elite]
         # replace worst half of population with offsprings
         joined = list(parents) + offsprings + elite
@@ -391,6 +381,7 @@ class GeneticDocker:
         print('Next population size is: ', len(self.next_population))
         self._generate_population(self.next_population)
         self.history[self.current_iteration] = mean_scores
+        self.current_iteration += 1
         return sorted_scores
 
 
@@ -431,23 +422,7 @@ plt.title('Best score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Best score [kcal/mol]')
 plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score.png')
-# plt.show()
-# print best compound linage
-# print_linage(sorted_scores[0][0])
-# print('Best compound: ', sorted_scores[0][0].name)
-# print('Best compound score: ', sorted_scores[0][1])
-# if sorted_scores[0][0].parent_1 is not None and sorted_scores[0][0].parent_2 is not None:
-#     print('Best compound parents: ', sorted_scores[0][0].parent_1.name, sorted_scores[0][0].parent_2.name)
-#     print('Best compound parents scores: ', sorted_scores[0][0].parent_1.score, sorted_scores[0][0].parent_2.score)
-#     if sorted_scores[0][0].parent_1.parent_1 != 'None':
-#         print('Best compound grandparents: ', sorted_scores[0][0].parent_1.parent_1.name,
-#               sorted_scores[0][0].parent_1.parent_2.name, sorted_scores[0][0].parent_2.parent_1.name,
-#               sorted_scores[0][0].parent_2.parent_2.name)
-#         print('Best compound grandparents scores: ', sorted_scores[0][0].parent_1.parent_1.score,
-#               sorted_scores[0][0].parent_1.parent_2.score, sorted_scores[0][0].parent_2.parent_1.score,
-#               sorted_scores[0][0].parent_2.parent_2.score)
-# print('Is best compound mutated: ', sorted_scores[0][0].is_mutated)
-# print('Is best compound offspring: ', sorted_scores[0][0].conjugate)
+# --------------------
 init_genes = GA.init_genes
 init_genes['gen'] = 0
 last_genes = GA.genes_overview(None)
