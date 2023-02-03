@@ -222,7 +222,16 @@ class Compound:
         return_code = subprocess.call(meeko_cmd, shell=True)
         # remove sdf file if exists ????
         if os.path.exists(sdf_name):
-            os.remove(sdf_name)
+            try:
+                os.remove(sdf_name)
+            except UserWarning:
+                print(f'Something went wrong with {sdf_name} removal')
+                if os.path.exists(sdf_name):
+                    print(f'{sdf_name} still exists')
+                if os.path.exists(self.name + '.pdbqt'):
+                    print(f'{self.name}.pdbqt was created successfully')
+                else:
+                    print(f'{self.name}.pdbqt was not created')
         os.chdir('../')
         # return None if conversion was not successful
         if return_code != 0:
