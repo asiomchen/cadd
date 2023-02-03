@@ -17,8 +17,6 @@ import argparse
 from multiprocessing import Pool
 from other import retrive_chkpt
 
-global_seed()
-
 parser = argparse.ArgumentParser()
 # add arguments: population size, number of generations, elite size, parent size
 parser.add_argument('--population_size', type=int, default=50, help='Population size', required=False)
@@ -29,6 +27,8 @@ parser.add_argument('--mutation_rate', type=float, default=0.333, help='Mutation
 parser.add_argument('--output', type=str, help='Output file', default='output.log')
 parser.add_argument('--chkpt', type=str, help='Checkpoint file', default='./docked_mols', required=False)
 parser.add_argument('--n_jobs', type=int, help='Number of jobs', default=2, required=False)
+parser.add_argument('--seed', type=int, help='Random seed', default=42, required=False)
+parser.add_argument('--plot_suffix', type=str, help='Suffix for plot', default='', required=False)
 # end, parse arguments
 args = parser.parse_args()
 # load all compounds
@@ -47,6 +47,9 @@ if args.chkpt and 'csv' in args.chkpt:
 elif args.chkpt and './' in args.chkpt:
     SCORES_DF = retrive_chkpt(args.chkpt)
     print(f'Loaded {len(SCORES_DF)} molecules from folder {args.chkpt}')
+
+# set random seed
+global_seed(args.seed)
 
 
 def global_sanitize(smiles: str) -> str:
@@ -403,7 +406,8 @@ plt.xlabel('Generation')
 plt.ylabel('Mean score [kcal/mol]')
 # plt.show()
 # save fig with timestamp
-plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution.png')
+plot_name = f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution_' + args.plot_suffix + '.png'
+plt.savefig(plot_name)
 # plot best score per generation
 best_scores_list = []
 for iter in GA.history:
@@ -417,7 +421,8 @@ plt.plot(best_scores_list)
 plt.title('Best score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Best score [kcal/mol]')
-plt.savefig(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score.png')
+plot_name = f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + args.plot_suffix + '.png'
+plt.savefig(plot_name)
 # --------------------
 init_genes = GA.init_genes
 init_genes['gen'] = 0
