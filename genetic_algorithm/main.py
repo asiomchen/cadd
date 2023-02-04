@@ -288,6 +288,14 @@ class GeneticDocker:
     def _generate_population(self, population):
         comp_count = 0
         to_generate = [comp for comp in population if comp.name + '.pdbqt' not in os.listdir('./generated_mols')]
+        names = [comp.name for comp in to_generate]
+        print(f'To generate before cleaning: {len(to_generate)}')
+        # select only duplicates
+        duplicates = set([name for name in names if names.count(name) > 1])
+        print(f'Number of duplicates: {len(duplicates)}')
+        # out of duplicates, select only one instance
+        to_generate = [comp for comp in to_generate if comp.name not in duplicates] + \
+                      [comp for comp in to_generate if comp.name in duplicates]
         comp_count = len(to_generate)
         with Pool(processes=8) as pool:
             pool.map(Compound.to_pdbqt, to_generate)
