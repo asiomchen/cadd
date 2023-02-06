@@ -135,7 +135,7 @@ class Compound:
         out_name = out_dir + '/' + self.name + '.pdbqt'
         # filling command template
         cmd = cmd_template.format(protein, ligand, ex, out_name)
-        print(f'Entering docking for {self.name}')
+        print(f'Entering docking for {self.name}...')
         # running docking without output
         return_code = subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if return_code != 0:
@@ -144,8 +144,8 @@ class Compound:
         else:
             # if docking was successful, we extract scores from output pdbqt and mean is used as score
             scores = extract_scores(out_name)
-            print(f'Exiting docking for {self.name}, scores: {scores}')
             self.score = np.mean(scores)
+            print(f'Exiting docking for {self.name}, score: {self.score}')
             return self.score
 
     def _reaction(self):

@@ -4,8 +4,6 @@ import os
 import subprocess
 import warnings
 from typing import Optional
-
-from deepchem.utils.rdkit_utils import load_molecule, write_molecule
 from openbabel import pybel
 from rdkit import Chem
 
@@ -68,6 +66,7 @@ def to_sdf(smiles: str, smiles_id: str, silent: bool = False):
     return sdf_mol
 
 def to_pdbqt(smiles: str, smiles_id: str, silent: bool = False):
+    from deepchem.utils.rdkit_utils import load_molecule, write_molecule
     """
     Convert smiles to pdbqt file for Vina docking
     Args:
