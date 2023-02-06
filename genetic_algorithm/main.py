@@ -11,6 +11,7 @@ from itertools import product
 import numpy as np
 from create_conjugates.reaction import Reactor
 import random
+import warnings
 from rdkit import Chem
 import subprocess
 import argparse
@@ -106,10 +107,10 @@ class Compound:
         return f'Compound(name={self.name}, parent_1={self.parent_1.name if self.parent_1 is not None else None}, parent_2={self.parent_2.name if self.parent_2 is not None else None}, is_mutated={self.is_mutated})'
 
     def __repr__(self):
-        return f'Compound({self.name})'
+        return f'Compound({self.name}, score={self.score:.3f})'
 
     def __eq__(self, other):
-        return self.ps == other.ps and self.link == other.link and self.lig == other.lig and False
+        return self.ps == other.ps and self.link == other.link and self.lig == other.lig
 
     def __hash__(self):
         return hash(self.conjugate)
@@ -127,6 +128,11 @@ class Compound:
             return self.score
         else:
             ligand = './generated_mols/' + self.name + '.pdbqt'
+        if os.path.exists(out_dir) is False:
+            os.mkdir(out_dir)
+        # check if molecule is already docked
+        if os.path.exists(out_dir + '/' + self.name + '.pdbqt'):
+            warnings.warn(f'Molecule {self.name} is already docked, check current algorithm')
         # docking command template using qvina-w
         cmd_template = "./qvina-w --receptor {} --ligand {} --num_modes 3 " \
                        "--exhaustiveness {} --seed 42 --out {} " \
@@ -288,14 +294,12 @@ class GeneticDocker:
     def _generate_population(self, population):
         comp_count = 0
         to_generate = [comp for comp in population if comp.name + '.pdbqt' not in os.listdir('./generated_mols')]
-        names = [comp.name for comp in to_generate]
         print(f'To generate before cleaning: {len(to_generate)}')
         # select only duplicates
-        duplicates = set([name for name in names if names.count(name) > 1])
-        print(f'Number of duplicates: {len(duplicates)}')
+        non_duplicates = set(to_generate)
+        print(f'Number of duplicates: {len(to_generate) - len(non_duplicates)}')
         # out of duplicates, select only one instance
-        to_generate = [comp for comp in to_generate if comp.name not in duplicates] + \
-                      [comp for comp in to_generate if comp.name in duplicates]
+        to_generate = list(non_duplicates)
         comp_count = len(to_generate)
         with Pool(processes=8) as pool:
             pool.map(Compound.to_pdbqt, to_generate)
@@ -310,6 +314,7 @@ class GeneticDocker:
     def run_iteration(self):
         global SCORES_DF
         mean_scores = {}
+        mean_list = []
         print('Running iteration: ', self.current_iteration)
 
         if self.next_population is not None:
@@ -327,6 +332,8 @@ class GeneticDocker:
                 print('SCORES_DF is None')
             if SCORES_DF is not None and compound.name in SCORES_DF.index:
                 mean_scores[compound] = SCORES_DF.loc[compound.name, 'score']
+                compound.score = SCORES_DF.loc[compound.name, 'score']
+                mean_list.append(compound)
             if SCORES_DF is not None and compound.name not in SCORES_DF.index:
                 docking_queue.append(compound)
         print(f'Queue length: {len(docking_queue)}')
@@ -335,46 +342,54 @@ class GeneticDocker:
         with Pool(args.n_jobs) as p:
             # use .dock() method to run docking
             scores = p.map(Compound.dock, docking_queue)
-        print(f'Scores length: {len(scores)}')
-        new_scores = {compound.name: score for compound, score in zip(docking_queue, scores)}
-        print(f'New scores: \n{new_scores}')
+        print(f'Queue after: {docking_queue}')
+        for compound, score in zip(docking_queue, scores):
+            compound.score = score
+            print(f'Compound: {compound.name}, score: {score}')
+        print(f'Scores: {scores}')
+
+        new_scores = {compound.name: compound.score for compound in docking_queue}
+        list_only = mean_list + docking_queue
+
+        sorted_scores = sorted(list_only, key=lambda x: x.score)
+        print('TEST:')
+        print([compound for compound in sorted_scores])
+        print('------------------')
         for compound, score in zip(docking_queue, scores):
             mean_scores[compound] = score
-            new_scores_df = pd.DataFrame.from_dict(new_scores, orient='index', columns=['score'])
-            # add to SCORES_DF
-            SCORES_DF = pd.concat([SCORES_DF, new_scores_df])
-            # drop index duplicates
-            SCORES_DF = SCORES_DF[~SCORES_DF.index.duplicated(keep='first')]
+        new_scores_df = pd.DataFrame.from_dict(new_scores, orient='index', columns=['score'])
+        # add to SCORES_DF
+        SCORES_DF = pd.concat([SCORES_DF, new_scores_df])
+        # drop index duplicates
+        SCORES_DF = SCORES_DF[~SCORES_DF.index.duplicated(keep='first')]
 
-        # apply elitism select only population_size best compounds
         if SCORES_DF is None:
             to_df = {c.name: score for c, score in mean_scores.items()}
             SCORES_DF = pd.DataFrame.from_dict(to_df, orient='index')
             SCORES_DF.columns = ['score']
 
-
-        # sort by mean score
-        sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
+        # apply elitism select only population_size best compounds
         print('Applying elitism...')
-        self.current_population = [x[0] for x in sorted_scores[:self.population_size]]
-        sorted_scores = [x for x in sorted_scores[:self.population_size]]
+        self.current_population = sorted_scores[:self.population_size]
         print('Current population size: ', len(self.current_population))
         # select 3 mols with probability proportional to their score
         parents = []
 
         # caclulate probability of selection normalized to 1
-        scores = [x[1] for x in sorted_scores]
-        scores = np.array(scores)
-        scores = scores / np.sum(scores)
-        print('Scores: \n', scores)
-        # select compounds only
-        compounds_only = [x[0] for x in sorted_scores]
+        scores_ranking = [x.score for x in self.current_population]
+        scores_ranking = np.array(scores_ranking)
+        scores_ranking = scores_ranking / np.sum(scores_ranking)
+        print('Scores: \n', scores_ranking)
         # in range of half of population size generate random number and select compound
         # Starting from the top of the population, keep adding the finesses to the partial sum P, till P<S
         # The individual for which P exceeds S is the chosen individual.
+        print('Selecting parents...')
+        print(f'Population size: {len(self.current_population)}')
+        print(f'Population: {self.current_population}')
 
         # generate offsprings
-        parents = np.random.choice(self.current_population, size=int(self.population_size / 2), p=scores, replace=False)
+        parents = np.random.choice(self.current_population, size=int(self.population_size / 2), p=scores_ranking,
+                                   replace=False)
         parents_1 = parents[:len(parents) // 2]
         parents_2 = parents[len(parents) // 2:]
         offsprings_1 = [parent_1.cross(parent_2) for parent_1, parent_2 in zip(parents_1, parents_2)]
@@ -389,7 +404,7 @@ class GeneticDocker:
         # in same fashion select subset of population to mutate
         # select best 20% of original population
         elite = sorted_scores[:int(self.population_size * args.elite_size)]
-        elite = [x[0] for x in elite]
+        print(elite)
         # replace worst half of population with offsprings
         joined = list(parents) + offsprings + elite
         self.next_population = joined
