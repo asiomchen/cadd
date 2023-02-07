@@ -438,7 +438,7 @@ plt.xlabel('Generation')
 plt.ylabel('Mean score [kcal/mol]')
 # plt.show()
 # save fig with timestamp
-plot_name = f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution_' + args.plot_suffix + '.png'
+plot_name = f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution_' + args.plot_suffix + '.png'
 plt.savefig(plot_name)
 # plot best score per generation
 best_scores_list = []
@@ -453,7 +453,7 @@ plt.plot(best_scores_list)
 plt.title('Best score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Best score [kcal/mol]')
-plot_name = f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + args.plot_suffix + '.png'
+plot_name = f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + args.plot_suffix + '.png'
 plt.savefig(plot_name)
 # --------------------
 init_genes = GA.init_genes
@@ -461,5 +461,7 @@ init_genes['gen'] = 0
 last_genes = GA.genes_overview(None)
 last_genes['gen'] = args.generations - 1
 merged = pd.concat([init_genes, last_genes])
-merged.to_csv(f'./{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_genes_overview.csv', index=False)
+merged.to_csv(
+    f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_genes_overview_' + args.plot_suffix + '.csv',
+    index=True)
 SCORES_DF.to_csv('chk.csv', index=True)
