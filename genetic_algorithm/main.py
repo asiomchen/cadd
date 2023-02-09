@@ -4,7 +4,7 @@ sys.path.insert(0, '..')
 from datetime import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
-from utils.convert_alt import to_pdbqt, to_sdf
+from utils.convert_alt import to_sdf
 from utils.fixes import global_seed
 from utils.extract_scores import extract_scores
 from itertools import product
@@ -23,8 +23,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--population_size', type=int, default=50, help='Population size', required=False)
 parser.add_argument('--generations', type=int, default=20, help='Number of generations', required=False)
 parser.add_argument('--elite_size', type=int, default=0.2, help='Elite size', required=False)
-parser.add_argument('--parent_size', type=int, default=0.5, help='Parent size', required=False)
+parser.add_argument('--parent_size', type=int, default=1, help='Parent size', required=False)
 parser.add_argument('--mutation_rate', type=float, default=0.333, help='Mutation rate', required=False)
+parser.add_argument('--duplicates', action='store_true', help='Allow duplicates', required=False)
+parser.add_argument('--no-duplicates', action='store_false', help='Allow duplicates', required=False)
+parser.set_defaults(duplicates=False)
 parser.add_argument('--output', type=str, help='Output file', default='output.log')
 parser.add_argument('--chkpt', type=str, help='Checkpoint file', default='./docked_mols', required=False)
 parser.add_argument('--n_jobs', type=int, help='Number of jobs', default=2, required=False)
@@ -278,8 +281,21 @@ class GeneticDocker:
         df = pd.DataFrame({'ps': ps, 'link': link, 'lig': lig})
         return df
 
-    def _init_population(self, size):
+    def _init_population(self, size, unique=(not args.duplicates)):
         init_population = []
+        names = []
+        while len(init_population) != size:
+            ps = random.sample(self.pss, 1)[0]
+            link = random.sample(self.links, 1)[0]
+            lig = random.sample(self.ligs, 1)[0]
+            compound_name = f'{self.pss.index(ps)}_{self.links.index(link)}_{self.ligs.index(lig)}'
+            if unique:
+                if compound_name not in names:
+                    init_population.append(Compound(ps, link, lig, name=compound_name))
+                    names.append(compound_name)
+            else:
+                init_population.append(Compound(ps, link, lig, name=compound_name))
+
         for i in range(size):
             ps = random.sample(self.pss, 1)[0]
             link = random.sample(self.links, 1)[0]
@@ -386,27 +402,65 @@ class GeneticDocker:
         print('Selecting parents...')
         print(f'Population size: {len(self.current_population)}')
         print(f'Population: {self.current_population}')
+        print(f'args.duplicates: {args.duplicates}')
+        n_parents = int(self.population_size * args.parent_size)
 
         # generate offsprings
-        parents = np.random.choice(self.current_population, size=int(self.population_size / 2), p=scores_ranking,
-                                   replace=False)
-        parents_1 = parents[:len(parents) // 2]
-        parents_2 = parents[len(parents) // 2:]
-        offsprings_1 = [parent_1.cross(parent_2) for parent_1, parent_2 in zip(parents_1, parents_2)]
-        offsprings_2 = [parent_2.cross(parent_1) for parent_1, parent_2 in zip(parents_1, parents_2)]
-        offsprings = offsprings_1 + offsprings_2
+        if args.duplicates:
+            print('Entering duplicates mode...')
+            if n_parents % 2 != 0:
+                n_parents += 1
+            parents = np.random.choice(self.current_population, size=n_parents, p=scores_ranking,
+                                       replace=True)
+            parents_1 = parents[:len(parents) // 2]
+            parents_2 = parents[len(parents) // 2:]
+            offsprings_1 = [parent_1.cross(parent_2) for parent_1, parent_2 in zip(parents_1, parents_2)]
+            offsprings_2 = [parent_2.cross(parent_1) for parent_1, parent_2 in zip(parents_1, parents_2)]
+            offsprings = offsprings_1 + offsprings_2
+            if len(offsprings) > n_parents:
+                print('Too many offsprings, cutting off the rest.')
+                offsprings = offsprings[:n_parents]
 
+            print(f'{len(offsprings)} offsprings generated from {len(parents)} parents.')
+            print(f'Number unique parents: {len(set(parents))} of {len(parents)}')
+            print(f'Number unique offsprings: {len(set(offsprings))} of {len(offsprings)}')
+
+
+        elif not args.duplicates:
+            print('Entering no duplicates mode...')
+            parents = np.random.choice(self.current_population, size=n_parents,
+                                       p=scores_ranking, replace=True)
+            parents_1 = parents[:len(parents) // 2]
+            parents_2 = parents[len(parents) // 2:]
+            offsprings_1 = [parent_1.cross(parent_2) for parent_1, parent_2 in zip(parents_1, parents_2)]
+            offsprings_2 = [parent_2.cross(parent_1) for parent_1, parent_2 in zip(parents_1, parents_2)]
+            initial_offsprings = set(offsprings_1 + offsprings_2)
+            print(f'Initial offsprings: {len(initial_offsprings)} of {len(offsprings_1 + offsprings_2)}')
+            while len(initial_offsprings) < int(self.population_size * args.parent_size):
+                difference = n_parents - len(initial_offsprings)
+                print(f'Adding {difference} offsprings...')
+                if difference % 2 != 0:
+                    difference += 1
+                additional_parents = parents[:difference]
+                print(f'Additional parents: {additional_parents}')
+                additional_parents_1 = additional_parents[:len(additional_parents) // 2]
+                additional_parents_2 = additional_parents[len(additional_parents) // 2:]
+                additional_offsprings_1 = [parent_1.cross(parent_2) for parent_1, parent_2 in
+                                           zip(additional_parents_1, additional_parents_2)]
+                additional_offsprings_2 = [parent_2.cross(parent_1) for parent_1, parent_2 in
+                                           zip(additional_parents_1, additional_parents_2)]
+                additional_offsprings = additional_offsprings_1 + additional_offsprings_2
+                initial_offsprings = initial_offsprings.union(additional_offsprings)
+            offsprings = list(initial_offsprings)
+        if len(offsprings) > n_parents:
+            print('Too many offsprings, cutting off the rest.')
+            offsprings = offsprings[:n_parents]
         print(f'{len(offsprings)} offsprings generated from {len(parents)} parents.')
-        print(f'Number unique parents: {len(set([parent.name for parent in parents]))} of {len(parents)}')
-        print(
-            f'Number unique offsprings: {len(set([offspring.name for offspring in offsprings]))} of {len(offsprings)}')
-
-        # in same fashion select subset of population to mutate
-        # select best 20% of original population
-        elite = sorted_scores[:int(self.population_size * args.elite_size)]
+        n_elite = int(self.population_size * args.elite_size)
+        elite = sorted_scores[:n_elite]
         print(elite)
         # replace worst half of population with offsprings
-        joined = list(parents) + offsprings + elite
+        joined = offsprings + elite
         self.next_population = joined
         print('Next population size is: ', len(self.next_population))
         self._generate_population(self.next_population)
