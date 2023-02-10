@@ -424,6 +424,8 @@ class GeneticDocker:
             print(f'{len(offsprings)} offsprings generated from {len(parents)} parents.')
             print(f'Number unique parents: {len(set(parents))} of {len(parents)}')
             print(f'Number unique offsprings: {len(set(offsprings))} of {len(offsprings)}')
+            n_elite = int(self.population_size * args.elite_size)
+            elite = sorted_scores[:n_elite]
 
 
         elif not args.duplicates:
@@ -452,12 +454,16 @@ class GeneticDocker:
                 additional_offsprings = additional_offsprings_1 + additional_offsprings_2
                 initial_offsprings = initial_offsprings.union(additional_offsprings)
             offsprings = list(initial_offsprings)
+
+            n_elite = int(self.population_size * args.elite_size)
+            unique_elite = list(set(sorted_scores))
+            unique_elite = sorted(unique_elite, key=lambda x: x.score)
+            elite = unique_elite[:n_elite]
+
         if len(offsprings) > n_parents:
             print('Too many offsprings, cutting off the rest.')
             offsprings = offsprings[:n_parents]
         print(f'{len(offsprings)} offsprings generated from {len(parents)} parents.')
-        n_elite = int(self.population_size * args.elite_size)
-        elite = sorted_scores[:n_elite]
         print(elite)
         # replace worst half of population with offsprings
         joined = offsprings + elite
