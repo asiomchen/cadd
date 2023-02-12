@@ -25,6 +25,9 @@ parser.add_argument('--generations', type=int, default=20, help='Number of gener
 parser.add_argument('--elite_size', type=int, default=0.2, help='Elite size', required=False)
 parser.add_argument('--parent_size', type=int, default=1, help='Parent size', required=False)
 parser.add_argument('--mutation_rate', type=float, default=0.333, help='Mutation rate', required=False)
+parser.add_argument('--selection', type=str, default='roulette', help='Selection method', required=False,
+                    choices=['roulette', 'rank'])
+parser.add_argument('--amax', type=float, default=1.2, help='a_max', required=False)
 parser.add_argument('--duplicates', action='store_true', help='Allow duplicates', required=False)
 parser.add_argument('--no-duplicates', action='store_false', help='Allow duplicates', required=False)
 parser.set_defaults(duplicates=False)
@@ -251,7 +254,7 @@ class Compound:
 
 
 class GeneticDocker:
-    def __init__(self, population_size):
+    def __init__(self, population_size, selection='roulette', a_max=1.2):
         self.dock_calls = 0
         self.ligs = None
         self.links = None
@@ -266,6 +269,26 @@ class GeneticDocker:
             self.current_population = self._init_population(size=self.population_size)
         self.next_population = None
         self.init_genes = None
+        self.selection = selection
+        self.a_max = a_max
+        if self.selection == 'rank':
+            if self.a_max > 2 or self.a_max < 1:
+                raise ValueError('a_max must be in range [1, 2]')
+            self.rank_probabilities = self._calculate_rank_probabilities(self.population_size, a_max=self.a_max)
+            print(f'Setting rank probabilities to:\n {self.rank_probabilities}')
+            print(f'Sum of probabilities: {sum(self.rank_probabilities)}')
+            print('Max probability: ', max(self.rank_probabilities))
+            print('Min probability: ', min(self.rank_probabilities))
+            if min(self.rank_probabilities) < 0.01:
+                print('WARNING: Min probability is less than 0.01')
+            else:
+                diff = max(self.rank_probabilities) / min(self.rank_probabilities)
+                print(f'Max / Min: {diff:.2f}')
+
+    def _calculate_rank_probabilities(self, population_size, a_max=1.2):
+        a_min = 2 - a_max
+        return [(a_max - (a_max - a_min) * (rank - 1) / (population_size - 1)) * 1 / population_size for rank in
+                range(1, population_size + 1)]
 
     def genes_overview(self, population=None):
         '''
@@ -390,12 +413,14 @@ class GeneticDocker:
         print('Current population size: ', len(self.current_population))
         # select 3 mols with probability proportional to their score
         parents = []
-
-        # caclulate probability of selection normalized to 1
-        scores_ranking = [x.score for x in self.current_population]
-        scores_ranking = np.array(scores_ranking)
-        scores_ranking = scores_ranking / np.sum(scores_ranking)
-        print('Scores: \n', scores_ranking)
+        if self.selection == 'roulette':
+            # caclulate probability of selection normalized to 1
+            scores_ranking = [x.score for x in self.current_population]
+            scores_ranking = np.array(scores_ranking)
+            scores_ranking = scores_ranking / np.sum(scores_ranking)
+            print('Scores: \n', scores_ranking)
+        if self.selection == 'rank':
+            scores_ranking = self.rank_probabilities
         # in range of half of population size generate random number and select compound
         # Starting from the top of the population, keep adding the finesses to the partial sum P, till P<S
         # The individual for which P exceeds S is the chosen individual.
@@ -477,13 +502,14 @@ class GeneticDocker:
 
 # actual run part
 
-GA = GeneticDocker(population_size=args.population_size)
+GA = GeneticDocker(population_size=args.population_size, selection=args.selection, a_max=args.amax)
 GA.set_parts(pss, links, ligs)
 for gen in range(args.generations):
     scores = GA.run_iteration()
     print(scores)
     print('-----------------------')
 mean_scores_list = []
+generation_names = []
 best_scores_list = []
 best_5_scores_list = []
 best_10_scores_list = []
@@ -492,6 +518,8 @@ for iter in GA.history:
     print(iter)
     # calucate generation mean
     mean_scores = {compound: np.mean(scores) for compound, scores in GA.history[iter].items()}
+    generation_compounds = [compound.name for compound in mean_scores.keys()]
+    generation_names.append(' '.join(generation_compounds))
     # sort by generation
     sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
     mean_scores_list.append(np.mean([x[1] for x in sorted_scores]))
@@ -514,7 +542,7 @@ plt.ylabel('Best score [kcal/mol]')
 plot_name = f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + args.plot_suffix + '.png'
 plt.legend(['Mean score', 'Best score', 'Best 5 score', 'Best 10 score', 'Best 20 score'])
 plt.savefig(plot_name)
-df_dict = {'gen': list(range(args.generations)), 'mean_score': mean_scores_list}
+df_dict = {'gen': list(range(args.generations)), 'mean_score': mean_scores_list, 'compound': generation_names}
 if args.generations >= 5:
     df_dict['best_5_score'] = best_5_scores_list
 if args.generations >= 10:
