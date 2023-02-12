@@ -483,8 +483,11 @@ for gen in range(args.generations):
     scores = GA.run_iteration()
     print(scores)
     print('-----------------------')
-print(GA.history)
 mean_scores_list = []
+best_scores_list = []
+best_5_scores_list = []
+best_10_scores_list = []
+best_20_scores_list = []
 for iter in GA.history:
     print(iter)
     # calucate generation mean
@@ -492,29 +495,35 @@ for iter in GA.history:
     # sort by generation
     sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
     mean_scores_list.append(np.mean([x[1] for x in sorted_scores]))
-plt.plot(mean_scores_list)
-plt.title('Mean score per generation')
-plt.xlabel('Generation')
-plt.ylabel('Mean score [kcal/mol]')
-# plt.show()
-# save fig with timestamp
-plot_name = f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_evolution_' + args.plot_suffix + '.png'
-plt.savefig(plot_name)
-# plot best score per generation
-best_scores_list = []
-for iter in GA.history:
-    print(iter)
-    # calucate generation mean
-    mean_scores = {compound: np.mean(scores) for compound, scores in GA.history[iter].items()}
-    # sort by generation
-    sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1])
     best_scores_list.append(sorted_scores[0][1])
+    best_5_scores_list.append(np.mean([x[1] for x in sorted_scores[:5]]))
+    best_10_scores_list.append(np.mean([x[1] for x in sorted_scores[:10]]))
+    best_20_scores_list.append(np.mean([x[1] for x in sorted_scores[:20]]))
+plt.plot(mean_scores_list)
+# plot best score per generation
 plt.plot(best_scores_list)
+if args.generations >= 5:
+    plt.plot(best_5_scores_list)
+if args.generations >= 10:
+    plt.plot(best_10_scores_list)
+if args.generations >= 20:
+    plt.plot(best_20_scores_list)
 plt.title('Best score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Best score [kcal/mol]')
 plot_name = f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + args.plot_suffix + '.png'
+plt.legend(['Mean score', 'Best score', 'Best 5 score', 'Best 10 score', 'Best 20 score'])
 plt.savefig(plot_name)
+df_dict = {'gen': list(range(args.generations)), 'mean_score': mean_scores_list}
+if args.generations >= 5:
+    df_dict['best_5_score'] = best_5_scores_list
+if args.generations >= 10:
+    df_dict['best_10_score'] = best_10_scores_list
+if args.generations >= 20:
+    df_dict['best_20_score'] = best_20_scores_list
+best_score = pd.DataFrame(df_dict)
+best_score.to_csv(
+    f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + args.plot_suffix + '.csv', index=False)
 # --------------------
 init_genes = GA.init_genes
 init_genes['gen'] = 0
