@@ -59,6 +59,12 @@ elif args.chkpt and './' in args.chkpt:
 global_seed(args.seed)
 
 
+def drop_duplicates(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
+
+
 def global_sanitize(smiles: str) -> str:
     '''
     Simple function to sanitize smiles, by hydrogen normalization and removing salts
@@ -278,8 +284,8 @@ class GeneticDocker:
             print(f'Sum of probabilities: {sum(self.rank_probabilities)}')
             print('Max probability: ', max(self.rank_probabilities))
             print('Min probability: ', min(self.rank_probabilities))
-            if min(self.rank_probabilities) < 0.01:
-                print('WARNING: Min probability is less than 0.01')
+            if min(self.rank_probabilities) < 0.0001:
+                print('WARNING: Min probability is less than 0.0001')
             else:
                 diff = max(self.rank_probabilities) / min(self.rank_probabilities)
                 print(f'Max / Min: {diff:.2f}')
@@ -317,14 +323,7 @@ class GeneticDocker:
                     names.append(compound_name)
             else:
                 init_population.append(Compound(ps, link, lig, name=compound_name))
-
-        for i in range(size):
-            ps = random.sample(self.pss, 1)[0]
-            link = random.sample(self.links, 1)[0]
-            lig = random.sample(self.ligs, 1)[0]
-            compound_name = f'{self.pss.index(ps)}_{self.links.index(link)}_{self.ligs.index(lig)}'
-
-            init_population.append(Compound(ps, link, lig, name=compound_name))
+        print(f'Generating {len(init_population)} initial compounds...')
         self._generate_population(init_population)
         self.init_genes = self.genes_overview(init_population)
         return init_population
@@ -339,9 +338,10 @@ class GeneticDocker:
         # out of duplicates, select only one instance
         to_generate = list(non_duplicates)
         comp_count = len(to_generate)
-        with Pool(processes=8) as pool:
+        with Pool(processes=10) as pool:
             pool.map(Compound.to_pdbqt, to_generate)
         print(f'Generated {comp_count} compounds  out of {len(population)}.')
+        print('Generated compounds: ', [c.name for c in population])
 
     def set_parts(self, pss, links, ligs):
         self.pss = pss
@@ -390,9 +390,6 @@ class GeneticDocker:
         list_only = mean_list + docking_queue
 
         sorted_scores = sorted(list_only, key=lambda x: x.score)
-        print('TEST:')
-        print([compound for compound in sorted_scores])
-        print('------------------')
         for compound, score in zip(docking_queue, scores):
             mean_scores[compound] = score
         new_scores_df = pd.DataFrame.from_dict(new_scores, orient='index', columns=['score'])
@@ -460,7 +457,7 @@ class GeneticDocker:
             parents_2 = parents[len(parents) // 2:]
             offsprings_1 = [parent_1.cross(parent_2) for parent_1, parent_2 in zip(parents_1, parents_2)]
             offsprings_2 = [parent_2.cross(parent_1) for parent_1, parent_2 in zip(parents_1, parents_2)]
-            initial_offsprings = set(offsprings_1 + offsprings_2)
+            initial_offsprings = drop_duplicates(offsprings_1 + offsprings_2)
             print(f'Initial offsprings: {len(initial_offsprings)} of {len(offsprings_1 + offsprings_2)}')
             while len(initial_offsprings) < int(self.population_size * args.parent_size):
                 difference = n_parents - len(initial_offsprings)
@@ -476,12 +473,11 @@ class GeneticDocker:
                 additional_offsprings_2 = [parent_2.cross(parent_1) for parent_1, parent_2 in
                                            zip(additional_parents_1, additional_parents_2)]
                 additional_offsprings = additional_offsprings_1 + additional_offsprings_2
-                initial_offsprings = initial_offsprings.union(additional_offsprings)
+                initial_offsprings = drop_duplicates(initial_offsprings + additional_offsprings)
             offsprings = list(initial_offsprings)
 
             n_elite = int(self.population_size * args.elite_size)
-            unique_elite = list(set(sorted_scores))
-            unique_elite = sorted(unique_elite, key=lambda x: x.score)
+            unique_elite = list(drop_duplicates(sorted_scores))
             elite = unique_elite[:n_elite]
 
         if len(offsprings) > n_parents:
