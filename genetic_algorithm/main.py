@@ -116,11 +116,10 @@ class Compound:
         return f'Compound({self.name}, score={self.score:.3f})'
 
     def __eq__(self, other):
-        return self.ps == other.ps and self.link == other.link and self.lig == other.lig
+        return (self.ps, self.link, self.lig) == (other.ps, other.link, other.lig)
 
     def __hash__(self):
-        return hash(self.conjugate)
-
+        return hash((self.ps, self.link, self.lig))
     def dock(self, protein='../data/prots/cox2.pdbqt', ex=32, centroid=(42.84, 31.02, 32.31, 34, 75, 43.79, 34.82),
              out_dir='./docked_mols'):
         # now docking assuming that we only COX-2 and best pocket is used (to be changed)
