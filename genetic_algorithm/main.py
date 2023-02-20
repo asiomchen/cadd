@@ -1,3 +1,4 @@
+import json
 import os, sys
 
 sys.path.insert(0, '..')
@@ -274,6 +275,7 @@ class GeneticDocker:
             self.current_population = self._init_population(size=self.population_size)
         self.next_population = None
         self.init_genes = None
+        self.compounds_docked = set()
         self.selection = selection
         self.a_max = a_max
         if self.selection == 'rank':
@@ -358,6 +360,7 @@ class GeneticDocker:
         if self.next_population is not None:
             self.current_population = self.next_population
             self.next_population = None
+        self.compounds_docked = self.compounds_docked.union(set([c.name for c in self.current_population]))
         docking_queue = []
         if SCORES_DF is None:
             print(f'Scores dataframe is empty, running docking for {len(self.current_population)} compounds')
@@ -503,6 +506,7 @@ for gen in range(args.generations):
     scores = GA.run_iteration()
     print(scores)
     print('-----------------------')
+print(f'Finishing algorithm after {args.generations} generations. {len(GA.compounds_docked)} compounds docked.')
 mean_scores_list = []
 generation_names = []
 best_scores_list = []
@@ -557,3 +561,7 @@ merged.to_csv(
     f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_genes_overview_' + args.plot_suffix + '.csv',
     index=True)
 SCORES_DF.to_csv('chk.csv', index=True)
+with open(f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_args_' + args.plot_suffix + '.json', 'w') as f:
+    params = vars(args)
+    params['docked_compounds'] = list(GA.compounds_docked)
+    json.dump(params, f)
