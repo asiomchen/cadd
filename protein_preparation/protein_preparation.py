@@ -90,7 +90,6 @@ def fix_protein(filename='', addHs_pH=7.4, output='', try_renumberResidues=True,
             resNum = [res.resid for res in original.residues]
             for idx, res in enumerate(from_fix.residues):
                 res.resid = resNum[idx]
-
             save = PDB.PDBWriter(filename=output)
             save.write(from_fix)
             save.close()
@@ -99,7 +98,10 @@ def fix_protein(filename='', addHs_pH=7.4, output='', try_renumberResidues=True,
 
 
 if __name__ == '__main__':
-    protein = '/home/anton/PycharmProjects/cadd/data/prots/cox.pdb'
+    import sys
+
+    protein = sys.argv[1]
     # centroid, box_dims = get_box(protein, extending=5.0)
     # print(centroid, box_dims, sep='\n')
-    fix_protein(filename=protein, addHs_pH=7.4, output='cox_fix.pdb', try_renumberResidues=True, removeHeterogens=False)
+    out_name = protein.split('.')[0] + '_fix.pdb'
+    fix_protein(filename=protein, addHs_pH=7.4, output=out_name, try_renumberResidues=True, removeHeterogens=False)

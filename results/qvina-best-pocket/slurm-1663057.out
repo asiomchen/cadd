@@ -1,0 +1,234 @@
+Protein path:  ./cox2.pdbqt
+Output path:  ./docked_pocket_16
+Exhaustiveness: 16
+Docking 1_1_1063.pdbqt to ./docked_pocket_16/1_1_1063.pdbqt
+./qvina-w --receptor ./cox2.pdbqt --ligand ./meeko_pocket_set/1_1_1063.pdbqt --num_modes 10 --exhaustiveness 16 --cpu 12 --seed 42 --out ./docked_pocket_16/1_1_1063.pdbqt --center_x 42.8405 --center_y 31.0155 --center_z 32.3135 --size_x 34.751 --size_y 43.7889 --size_z 34.821
+############################################################################
+# If you used Qvina-W in your work, please cite:                           #
+#                                                                          #
+# Nafisa M. Hassan, Amr A. Alhossary, Yuguang Mu, and Chee-Keong Kwoh,     #
+# Protein-Ligand Blind Docking Using QuickVina-W With Inter-Process        #
+# Spatio-Temporal Integration, Scientific Reports 7(1):2017,               #
+# doi:10.1038/s41598-017-15571-7                                           #
+#                                                                          #
+# You are also encouraged to cite:                                         #
+# QuickVina 2                                                              #
+# Amr Alhossary, Stephanus Daniel Handoko, Yuguang Mu, and Chee-Keong Kwoh,#
+# Fast, Accurate, and Reliable Molecular Docking with QuickVina 2,         #
+# Bioinformatics (2015), doi: 10.1093/bioinformatics/btv082                #
+#                                                                          #
+# Quick Vina 1:                                                            #
+# Stephanus Daniel Handoko, Xuchang Ouyang, Chinh Tran To Su, Chee Keong   #
+# Kwoh, Yew Soon Ong,                                                      #
+# QuickVina: Accelerating AutoDock Vina Using Gradient-Based Heuristics for#
+# Global Optimization,                                                     #
+# IEEE/ACM Transactions on Computational Biology and Bioinformatics,vol.9, #
+# no. 5, pp. 1266-1272, Sept.-Oct. 2012, doi: 10.1109/TCBB.2012.82         #
+#                                                                          #
+# and original AutoDock Vina paper:                                        #
+# O. Trott, A. J. Olson,                                                   #
+# AutoDock Vina: improving the speed and accuracy of docking with a        #
+# new scoring function, efficient optimization and multithreading,         #
+# Journal of Computational Chemistry 31 (2010) 455-461                     #
+# doi: 10.1002/jcc.21334                                                   #
+############################################################################
+
+WARNING: The search space volume > 27000 Angstrom^3 (See FAQ)
+Reading input ... done.
+lazy initialization done
+Setting up the scoring function ... done.
+Analyzing the binding site ... done.
+Using random seed: 42
+Performing search ... 
+0%   10   20   30   40   50   60   70   80   90   100%
+|----|----|----|----|----|----|----|----|----|----|
+***************************************************
+done.
+Refining results ... 
+searching finished in 75.004 seconds
+done.
+
+mode |   affinity | dist from best mode
+     | (kcal/mol) | rmsd l.b.| rmsd u.b.
+-----+------------+----------+----------
+   1        -13.1      0.000      0.000
+   2        -13.1      0.200      1.587
+   3        -13.0      2.647      4.851
+   4        -12.8      2.676      8.647
+   5        -12.6      1.796      2.818
+   6        -12.5      5.533     11.524
+   7        -12.5      5.612     10.818
+   8        -12.5      0.599      7.440
+   9        -12.3      3.612      7.765
+  10        -12.3      5.363     11.334
+Writing output ... done.
+Time elapsed: 78 seconds
+Estimated time remaining: 127 minutes
+Docking 1_1_1093.pdbqt to ./docked_pocket_16/1_1_1093.pdbqt
+./qvina-w --receptor ./cox2.pdbqt --ligand ./meeko_pocket_set/1_1_1093.pdbqt --num_modes 10 --exhaustiveness 16 --cpu 12 --seed 42 --out ./docked_pocket_16/1_1_1093.pdbqt --center_x 42.8405 --center_y 31.0155 --center_z 32.3135 --size_x 34.751 --size_y 43.7889 --size_z 34.821
+############################################################################
+# If you used Qvina-W in your work, please cite:                           #
+#                                                                          #
+# Nafisa M. Hassan, Amr A. Alhossary, Yuguang Mu, and Chee-Keong Kwoh,     #
+# Protein-Ligand Blind Docking Using QuickVina-W With Inter-Process        #
+# Spatio-Temporal Integration, Scientific Reports 7(1):2017,               #
+# doi:10.1038/s41598-017-15571-7                                           #
+#                                                                          #
+# You are also encouraged to cite:                                         #
+# QuickVina 2                                                              #
+# Amr Alhossary, Stephanus Daniel Handoko, Yuguang Mu, and Chee-Keong Kwoh,#
+# Fast, Accurate, and Reliable Molecular Docking with QuickVina 2,         #
+# Bioinformatics (2015), doi: 10.1093/bioinformatics/btv082                #
+#                                                                          #
+# Quick Vina 1:                                                            #
+# Stephanus Daniel Handoko, Xuchang Ouyang, Chinh Tran To Su, Chee Keong   #
+# Kwoh, Yew Soon Ong,                                                      #
+# QuickVina: Accelerating AutoDock Vina Using Gradient-Based Heuristics for#
+# Global Optimization,                                                     #
+# IEEE/ACM Transactions on Computational Biology and Bioinformatics,vol.9, #
+# no. 5, pp. 1266-1272, Sept.-Oct. 2012, doi: 10.1109/TCBB.2012.82         #
+#                                                                          #
+# and original AutoDock Vina paper:                                        #
+# O. Trott, A. J. Olson,                                                   #
+# AutoDock Vina: improving the speed and accuracy of docking with a        #
+# new scoring function, efficient optimization and multithreading,         #
+# Journal of Computational Chemistry 31 (2010) 455-461                     #
+# doi: 10.1002/jcc.21334                                                   #
+############################################################################
+
+WARNING: The search space volume > 27000 Angstrom^3 (See FAQ)
+Reading input ... done.
+lazy initialization done
+Setting up the scoring function ... done.
+Analyzing the binding site ... done.
+Using random seed: 42
+Performing search ... 
+0%   10   20   30   40   50   60   70   80   90   100%
+|----|----|----|----|----|----|----|----|----|----|
+***************************************************
+done.
+Refining results ... 
+searching finished in 118.419 seconds
+done.
+
+mode |   affinity | dist from best mode
+     | (kcal/mol) | rmsd l.b.| rmsd u.b.
+-----+------------+----------+----------
+   1        -12.2      0.000      0.000
+   2        -12.2      0.293      7.362
+   3        -12.2      0.140      1.590
+   4        -12.2      0.319      1.613
+   5        -12.2      5.422     11.013
+   6        -12.2      0.652      7.298
+   7        -12.2      5.309     10.587
+   8        -12.1      5.241      9.655
+   9        -12.1      5.310      9.682
+  10        -12.0      0.249      1.603
+Writing output ... done.
+Time elapsed: 121 seconds
+Estimated time remaining: 195 minutes
+Docking 1_1_1138.pdbqt to ./docked_pocket_16/1_1_1138.pdbqt
+./qvina-w --receptor ./cox2.pdbqt --ligand ./meeko_pocket_set/1_1_1138.pdbqt --num_modes 10 --exhaustiveness 16 --cpu 12 --seed 42 --out ./docked_pocket_16/1_1_1138.pdbqt --center_x 42.8405 --center_y 31.0155 --center_z 32.3135 --size_x 34.751 --size_y 43.7889 --size_z 34.821
+############################################################################
+# If you used Qvina-W in your work, please cite:                           #
+#                                                                          #
+# Nafisa M. Hassan, Amr A. Alhossary, Yuguang Mu, and Chee-Keong Kwoh,     #
+# Protein-Ligand Blind Docking Using QuickVina-W With Inter-Process        #
+# Spatio-Temporal Integration, Scientific Reports 7(1):2017,               #
+# doi:10.1038/s41598-017-15571-7                                           #
+#                                                                          #
+# You are also encouraged to cite:                                         #
+# QuickVina 2                                                              #
+# Amr Alhossary, Stephanus Daniel Handoko, Yuguang Mu, and Chee-Keong Kwoh,#
+# Fast, Accurate, and Reliable Molecular Docking with QuickVina 2,         #
+# Bioinformatics (2015), doi: 10.1093/bioinformatics/btv082                #
+#                                                                          #
+# Quick Vina 1:                                                            #
+# Stephanus Daniel Handoko, Xuchang Ouyang, Chinh Tran To Su, Chee Keong   #
+# Kwoh, Yew Soon Ong,                                                      #
+# QuickVina: Accelerating AutoDock Vina Using Gradient-Based Heuristics for#
+# Global Optimization,                                                     #
+# IEEE/ACM Transactions on Computational Biology and Bioinformatics,vol.9, #
+# no. 5, pp. 1266-1272, Sept.-Oct. 2012, doi: 10.1109/TCBB.2012.82         #
+#                                                                          #
+# and original AutoDock Vina paper:                                        #
+# O. Trott, A. J. Olson,                                                   #
+# AutoDock Vina: improving the speed and accuracy of docking with a        #
+# new scoring function, efficient optimization and multithreading,         #
+# Journal of Computational Chemistry 31 (2010) 455-461                     #
+# doi: 10.1002/jcc.21334                                                   #
+############################################################################
+
+WARNING: The search space volume > 27000 Angstrom^3 (See FAQ)
+Reading input ... done.
+lazy initialization done
+Setting up the scoring function ... done.
+Analyzing the binding site ... done.
+Using random seed: 42
+Performing search ... 
+0%   10   20   30   40   50   60   70   80   90   100%
+|----|----|----|----|----|----|----|----|----|----|
+***************************************************
+done.
+Refining results ... 
+searching finished in 48.680 seconds
+done.
+
+mode |   affinity | dist from best mode
+     | (kcal/mol) | rmsd l.b.| rmsd u.b.
+-----+------------+----------+----------
+   1        -10.4      0.000      0.000
+   2        -10.4      3.955      9.170
+   3        -10.4      4.747      9.541
+   4        -10.3      3.460      8.645
+   5        -10.3      0.444      1.565
+   6        -10.3      3.971      8.989
+   7        -10.2      3.218      8.430
+   8        -10.1      5.217      9.188
+   9        -10.0      5.468     11.947
+  10        -10.0      3.474      5.289
+Writing output ... done.
+Time elapsed: 51 seconds
+Estimated time remaining: 81 minutes
+Docking 1_1_1168.pdbqt to ./docked_pocket_16/1_1_1168.pdbqt
+./qvina-w --receptor ./cox2.pdbqt --ligand ./meeko_pocket_set/1_1_1168.pdbqt --num_modes 10 --exhaustiveness 16 --cpu 12 --seed 42 --out ./docked_pocket_16/1_1_1168.pdbqt --center_x 42.8405 --center_y 31.0155 --center_z 32.3135 --size_x 34.751 --size_y 43.7889 --size_z 34.821
+############################################################################
+# If you used Qvina-W in your work, please cite:                           #
+#                                                                          #
+# Nafisa M. Hassan, Amr A. Alhossary, Yuguang Mu, and Chee-Keong Kwoh,     #
+# Protein-Ligand Blind Docking Using QuickVina-W With Inter-Process        #
+# Spatio-Temporal Integration, Scientific Reports 7(1):2017,               #
+# doi:10.1038/s41598-017-15571-7                                           #
+#                                                                          #
+# You are also encouraged to cite:                                         #
+# QuickVina 2                                                              #
+# Amr Alhossary, Stephanus Daniel Handoko, Yuguang Mu, and Chee-Keong Kwoh,#
+# Fast, Accurate, and Reliable Molecular Docking with QuickVina 2,         #
+# Bioinformatics (2015), doi: 10.1093/bioinformatics/btv082                #
+#                                                                          #
+# Quick Vina 1:                                                            #
+# Stephanus Daniel Handoko, Xuchang Ouyang, Chinh Tran To Su, Chee Keong   #
+# Kwoh, Yew Soon Ong,                                                      #
+# QuickVina: Accelerating AutoDock Vina Using Gradient-Based Heuristics for#
+# Global Optimization,                                                     #
+# IEEE/ACM Transactions on Computational Biology and Bioinformatics,vol.9, #
+# no. 5, pp. 1266-1272, Sept.-Oct. 2012, doi: 10.1109/TCBB.2012.82         #
+#                                                                          #
+# and original AutoDock Vina paper:                                        #
+# O. Trott, A. J. Olson,                                                   #
+# AutoDock Vina: improving the speed and accuracy of docking with a        #
+# new scoring function, efficient optimization and multithreading,         #
+# Journal of Computational Chemistry 31 (2010) 455-461                     #
+# doi: 10.1002/jcc.21334                                                   #
+############################################################################
+
+WARNING: The search space volume > 27000 Angstrom^3 (See FAQ)
+Reading input ... done.
+lazy initialization done
+Setting up the scoring function ... done.
+Analyzing the binding site ... done.
+Using random seed: 42
+Performing search ... 
+0%   10   20   30   40   50   60   70   80   90   100%
+|----|----|----|----|----|----|----|----|----|----|
+*******************slurmstepd: error: *** JOB 1663057 ON ac0075 CANCELLED AT 2023-01-10T15:27:37 ***
