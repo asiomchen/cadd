@@ -41,7 +41,7 @@ parser.add_argument('--plot_suffix', type=str, help='Suffix for plot', default='
 args = parser.parse_args()
 # load all compounds
 data_path = '../data/parts/'
-ligs = open(data_path + 'ligands_v2.smi').readlines()
+ligs = open(data_path + 'ligands_v4.smi').readlines()
 links = open(data_path + 'linker.smi').readlines()
 pss = open(data_path + 'ps.smi').readlines()
 # number of compounds possible to create
