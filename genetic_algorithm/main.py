@@ -233,7 +233,9 @@ class Compound:
             return None
         os.chdir(path)
         # firstly, smiles is converted to sdf with openbabel and protonation state is set to pH 7.4
-        sdf_name = to_sdf(self.conjugate, self.name)
+        sdf_name = to_sdf(self.conjugate, self.name, silent=True)
+        if sdf_name is None:
+            warnings.warn(f'Error in conversion to sdf for {self.name}')
         # then, sdf is converted to pdbqt with meeko, as it is preferred way to generate pdbqt files
         # to avoid connectivity and atom type issues
         meeko_cmd = f'mk_prepare_ligand.py -i {sdf_name} -o {self.name}.pdbqt'
