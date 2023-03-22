@@ -342,7 +342,7 @@ class GeneticDocker:
         # out of duplicates, select only one instance
         to_generate = list(non_duplicates)
         comp_count = len(to_generate)
-        with Pool(processes=10) as pool:
+        with Pool(processes=args.n_jobs) as pool:
             pool.map(Compound.to_pdbqt, to_generate)
         print(f'Generated {comp_count} compounds  out of {len(population)}.')
         print('Generated compounds: ', [c.name for c in population])
