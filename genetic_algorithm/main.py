@@ -41,7 +41,7 @@ parser.add_argument('--plot_suffix', type=str, help='Suffix for plot', default='
 args = parser.parse_args()
 # load all compounds
 data_path = '../data/parts/'
-ligs = open(data_path + 'ligands_v2.smi').readlines()
+ligs = open(data_path + 'ligands_v4.smi').readlines()
 links = open(data_path + 'linker.smi').readlines()
 pss = open(data_path + 'ps.smi').readlines()
 # number of compounds possible to create
@@ -233,7 +233,9 @@ class Compound:
             return None
         os.chdir(path)
         # firstly, smiles is converted to sdf with openbabel and protonation state is set to pH 7.4
-        sdf_name = to_sdf(self.conjugate, self.name)
+        sdf_name = to_sdf(self.conjugate, self.name, silent=True)
+        if sdf_name is None:
+            warnings.warn(f'Error in conversion to sdf for {self.name}')
         # then, sdf is converted to pdbqt with meeko, as it is preferred way to generate pdbqt files
         # to avoid connectivity and atom type issues
         meeko_cmd = f'mk_prepare_ligand.py -i {sdf_name} -o {self.name}.pdbqt'
@@ -340,7 +342,7 @@ class GeneticDocker:
         # out of duplicates, select only one instance
         to_generate = list(non_duplicates)
         comp_count = len(to_generate)
-        with Pool(processes=10) as pool:
+        with Pool(processes=args.n_jobs) as pool:
             pool.map(Compound.to_pdbqt, to_generate)
         print(f'Generated {comp_count} compounds  out of {len(population)}.')
         print('Generated compounds: ', [c.name for c in population])
