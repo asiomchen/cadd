@@ -342,7 +342,7 @@ class GeneticDocker:
         # out of duplicates, select only one instance
         to_generate = list(non_duplicates)
         comp_count = len(to_generate)
-        with Pool(processes=args.n_jobs) as pool:
+        with Pool(processes=args.population_size) as pool:
             pool.map(Compound.to_pdbqt, to_generate)
         print(f'Generated {comp_count} compounds  out of {len(population)}.')
         print('Generated compounds: ', [c.name for c in population])
@@ -537,10 +537,31 @@ if args.generations >= 10:
     plt.plot(best_10_scores_list)
 if args.generations >= 20:
     plt.plot(best_20_scores_list)
+
+def generate_plot_suffix(args):
+    suffix = ''
+    #add population size
+    suffix += f'pop{args.population_size}_'
+    #add number of generations
+    suffix += f'gen{args.generations}_'
+    #add seed
+    suffix += f'seed{args.seed}_'
+    #is duplicate removal on?
+    if args.duplicates:
+        suffix += 'dup_'
+    else:
+        suffix += 'nodup_'
+    #add selection method
+    suffix += f'sel{args.selection}_'
+    if args.selection == 'rank':
+        suffix += f'amax{args.amax}_'
+    return suffix
+autosuffix = generate_plot_suffix(args)
+print(f'Plot auto suffix: {autosuffix}')
 plt.title('Best score per generation')
 plt.xlabel('Generation')
 plt.ylabel('Best score [kcal/mol]')
-plot_name = f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + args.plot_suffix + '.png'
+plot_name = f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + autosuffix + args.plot_suffix + '.png'
 plt.legend(['Mean score', 'Best score', 'Best 5 score', 'Best 10 score', 'Best 20 score'])
 plt.savefig(plot_name)
 df_dict = {'gen': list(range(args.generations)), 'mean_score': mean_scores_list, 'compound': generation_names}
@@ -552,7 +573,7 @@ if args.generations >= 20:
     df_dict['best_20_score'] = best_20_scores_list
 best_score = pd.DataFrame(df_dict)
 best_score.to_csv(
-    f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + args.plot_suffix + '.csv', index=False)
+    f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_best_score_' + autosuffix + args.plot_suffix + '.csv', index=False)
 # --------------------
 init_genes = GA.init_genes
 init_genes['gen'] = 0
@@ -560,10 +581,10 @@ last_genes = GA.genes_overview(None)
 last_genes['gen'] = args.generations - 1
 merged = pd.concat([init_genes, last_genes])
 merged.to_csv(
-    f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_genes_overview_' + args.plot_suffix + '.csv',
+    f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_genes_overview_' + autosuffix + args.plot_suffix + '.csv',
     index=True)
 SCORES_DF.to_csv('chk.csv', index=True)
-with open(f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_args_' + args.plot_suffix + '.json', 'w') as f:
+with open(f'./GA_results/{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_args_' + autosuffix + args.plot_suffix + '.json', 'w') as f:
     params = vars(args)
     params['docked_compounds'] = list(GA.compounds_docked)
     json.dump(params, f)
