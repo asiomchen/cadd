@@ -1,3 +1,10 @@
 .idea
 results
 game
+__pycache__
+.vscode
+*.svg
+*.pkl
+*.zip
+.ipynb_checkpoints
+*.png
