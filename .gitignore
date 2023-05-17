@@ -1,3 +1,8 @@
 .idea
 game
 .vscode/settings.json
+*.svg
+*.png
+*.pkl
+__pycache__
+*.zip
