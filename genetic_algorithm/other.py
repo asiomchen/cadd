@@ -19,4 +19,5 @@ def retrive_chkpt(path):
 if __name__ == '__main__':
     path = sys.argv[1]
     chk = retrive_chkpt(path)
+    chk.to_csv('chk.csv')
     print(chk)
